@@ -1,0 +1,187 @@
+import pandas as pd
+import numpy as np
+import os
+from datetime import datetime
+import warnings
+import teradatasql as td
+import yaml
+import json
+import logging
+import time
+
+# Suppress warnings for cleaner output
+warnings.filterwarnings('ignore')
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Load configuration
+with open('config.yml', 'r') as file:
+    config = yaml.safe_load(file)
+
+# Load credentials
+with open('creds.json', 'r') as file:
+    creds = json.load(file)
+
+# Create Teradata connection
+try:
+    db_conn = td.connect(None, host=creds['host'], user=creds['username'], password=creds['password'])
+    logger.info("Connected to Teradata successfully")
+except Exception as e:
+    logger.error(f"Connection failed: {str(e)}")
+    raise
+
+def get_features(period_id, conn, config, sample_size=None):
+    query = f"""
+    SELECT * 
+    FROM {config['input_table']}
+    WHERE Period_Id = DATE '{period_id}'
+    """
+    if sample_size:
+        query += f" SAMPLE {sample_size}"  # Random sample of sample_size records
+
+    try:
+        start_time = time.perf_counter()  # Start timer
+        df = pd.read_sql(query, conn)
+        
+        # Convert Decimal columns to float to avoid type errors
+        if 'AVG_MI_Usage' in df.columns:
+            df['AVG_MI_Usage'] = pd.to_numeric(df['AVG_MI_Usage'], errors='coerce').astype('float64')
+        
+        # Ensure No_Sites columns are numeric
+        numeric_cols = ['No_Sites_D1', 'No_Sites_D2']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').astype('float64')
+        
+        elapsed_time = time.perf_counter() - start_time
+        logger.info(f"Retrieved {len(df)} rows for Period_Id {period_id}. Loading time: {elapsed_time:.2f} seconds")
+        logger.info(f"Data types: AVG_MI_Usage={df['AVG_MI_Usage'].dtype}, No_Sites_D1={df['No_Sites_D1'].dtype}")
+        return df
+    except Exception as e:
+        logger.error(f"Query failed: {str(e)}")
+        raise
+
+def run_inference(df_original, min_base, period_id):
+    if len(df_original) < min_base:
+        logger.warning(f"Insufficient data: {len(df_original)} rows, expected {min_base}")
+        return df_original
+
+    # Calculate No_Sites_D1_D2_Avg
+    df = df_original.copy()
+    df['No_Sites_D1_D2_Avg'] = df[['No_Sites_D1', 'No_Sites_D2']].mean(axis=1)
+
+    # Filter high-usage customers (daily equivalent of >100 MB/month ~ >3.33 MB/day)
+    all_features = df[df['AVG_MI_Usage'] > 3.33].copy()
+    if all_features.empty:
+        logger.warning("No high-usage data, using all data")
+        all_features = df.copy()
+
+    df1 = all_features.copy()
+
+    # IQR for No_Sites_D1
+    Q = df1[['No_Sites_D1']]
+    Q1_Q3 = Q.quantile([0.25, 0.75]).reset_index()
+    Q3 = Q1_Q3.loc[Q1_Q3['index'] == 0.75, 'No_Sites_D1'].values[0]
+    Q1 = Q1_Q3.loc[Q1_Q3['index'] == 0.25, 'No_Sites_D1'].values[0]
+    IQR = Q3 - Q1
+    outliers = Q3 + (2.5 * IQR)
+
+    # IQR for No_Sites_D1_D2_Avg
+    Q_2 = df1[['No_Sites_D1_D2_Avg']]
+    Q1_Q3_2 = Q_2.quantile([0.25, 0.75]).reset_index()
+    Q3_2 = Q1_Q3_2.loc[Q1_Q3_2['index'] == 0.75, 'No_Sites_D1_D2_Avg'].values[0]
+    Q1_2 = Q1_Q3_2.loc[Q1_Q3_2['index'] == 0.25, 'No_Sites_D1_D2_Avg'].values[0]
+    IQR_2 = Q3_2 - Q1_2
+    outliers_2 = Q3_2 + (2.5 * IQR_2)
+
+    # Remove zeros and outliers for mean/std calculation
+    df_remove_0_Site = df1.loc[df1['No_Sites_D1'] > 0]
+    df_remove_outliers = df_remove_0_Site.loc[df_remove_0_Site['No_Sites_D1'] < outliers]
+
+    df_remove_0_Site_2 = df1.loc[df1['No_Sites_D1_D2_Avg'] > 0]
+    df_remove_outliers_2 = df_remove_0_Site_2.loc[df_remove_0_Site_2['No_Sites_D1_D2_Avg'] < outliers_2]
+
+    # Calculate mean and std
+    mean = df_remove_outliers['No_Sites_D1'].mean()
+    std = df_remove_outliers['No_Sites_D1'].std()
+
+    mean_2 = df_remove_outliers_2['No_Sites_D1_D2_Avg'].mean()
+    std_2 = df_remove_outliers_2['No_Sites_D1_D2_Avg'].std()
+
+    # Define boundaries (asymmetric std-dev ranges, same as monthly)
+    std1 = mean + (std * -1)
+    std2 = mean + (std * -0.66)
+    std3 = mean + (std * -0.33)
+    std4 = mean + (std * 0)
+    std5 = mean + (std * 0.50)
+    std6 = mean + (std * 0.75)
+    std7 = mean + (std * 1)
+    std8 = mean + (std * 1.5)
+    std9 = mean + (std * 2)
+
+    std1_2 = mean_2 + (std_2 * -1)
+    std2_2 = mean_2 + (std_2 * -0.66)
+    std3_2 = mean_2 + (std_2 * -0.33)
+    std4_2 = mean_2 + (std_2 * 0)
+    std5_2 = mean_2 + (std_2 * 0.50)
+    std6_2 = mean_2 + (std_2 * 0.75)
+    std7_2 = mean_2 + (std_2 * 1)
+    std8_2 = mean_2 + (std_2 * 1.5)
+    std9_2 = mean_2 + (std_2 * 2)
+
+    # Assign labels for No_Sites_D1 (label_1)
+    df['label_1'] = -1  # Default
+    df.loc[df['No_Sites_D1'] > 0, 'label_1'] = 0  # Minimum for active
+    df.loc[(df['No_Sites_D1'] > std1) & (df['No_Sites_D1'] <= std2), 'label_1'] = 1
+    df.loc[(df['No_Sites_D1'] > std2) & (df['No_Sites_D1'] <= std3), 'label_1'] = 2
+    df.loc[(df['No_Sites_D1'] > std3) & (df['No_Sites_D1'] <= std4), 'label_1'] = 3
+    df.loc[(df['No_Sites_D1'] > std4) & (df['No_Sites_D1'] <= std5), 'label_1'] = 4
+    df.loc[(df['No_Sites_D1'] > std5) & (df['No_Sites_D1'] <= std6), 'label_1'] = 5
+    df.loc[(df['No_Sites_D1'] > std6) & (df['No_Sites_D1'] <= std7), 'label_1'] = 6
+    df.loc[(df['No_Sites_D1'] > std7) & (df['No_Sites_D1'] <= std8), 'label_1'] = 7
+    df.loc[(df['No_Sites_D1'] > std8) & (df['No_Sites_D1'] <= std9), 'label_1'] = 8
+    df.loc[df['No_Sites_D1'] > std9, 'label_1'] = 9
+
+    # Assign labels for No_Sites_D1_D2_Avg (label_2)
+    df['label_2'] = 0  # Default
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std1_2) & (df['No_Sites_D1_D2_Avg'] <= std2_2), 'label_2'] = 1
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std2_2) & (df['No_Sites_D1_D2_Avg'] <= std3_2), 'label_2'] = 2
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std3_2) & (df['No_Sites_D1_D2_Avg'] <= std4_2), 'label_2'] = 3
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std4_2) & (df['No_Sites_D1_D2_Avg'] <= std5_2), 'label_2'] = 4
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std5_2) & (df['No_Sites_D1_D2_Avg'] <= std6_2), 'label_2'] = 5
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std6_2) & (df['No_Sites_D1_D2_Avg'] <= std7_2), 'label_2'] = 6
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std7_2) & (df['No_Sites_D1_D2_Avg'] <= std8_2), 'label_2'] = 7
+    df.loc[(df['No_Sites_D1_D2_Avg'] > std8_2) & (df['No_Sites_D1_D2_Avg'] <= std9_2), 'label_2'] = 8
+    df.loc[df['No_Sites_D1_D2_Avg'] > std9_2, 'label_2'] = 9
+
+    # Log statistics
+    logger.info(f"label_1 distribution: {df['label_1'].value_counts().to_dict()}")
+    logger.info(f"label_2 distribution: {df['label_2'].value_counts().to_dict()}")
+
+    # Prepare output
+    output_cols = [
+        'Subscription_Id', 'Period_Id', 'No_Sites_D1', 'label_1', 
+        'No_Sites_D1_D2_Avg', 'label_2'
+    ]
+    df_output = df[output_cols]
+
+    # Save to CSV
+    output_file = f'Movement_Index_Result_Daily_{period_id}.csv'
+    df_output.to_csv(output_file, index=False)
+    logger.info(f"Output saved to {output_file}")
+
+    return df_output
+
+# Test the script
+period_id = '2025-09-15'  # Adjust to today's date
+df = get_features(period_id, db_conn, config, sample_size=3000000)  # Sample 3 million records
+result = run_inference(df, config['min_base'], period_id)
+
+# Display sample
+print(result.sample(10))
+
+# Close connection
+db_conn.close()
+logger.info("Teradata connection closed")
