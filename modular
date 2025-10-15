@@ -1,0 +1,306 @@
+df.drop(columns = ['SMS_FLAG'] , inplace=True)
+# List of offer names to drop
+offers_to_drop = [
+    'Dynamic Offering ROME cross-net voice',
+    'Dynamic Offering ROME on-net and cross-net voice pool ',
+    'FREE_ZONE_ON_DEMAND_NEWS',
+    'STILETTO'
+]
+
+# Drop records where Offer_Name is in the list
+df_filtered = df[~df['Offer_Name'].isin(offers_to_drop)]
+
+def inspect_and_convert_datatypes(df, exclude_columns=['Subscription_Id'], verbose=True):
+    """
+    Inspects DataFrame columns, determines appropriate datatypes, and converts them.
+    Handles invalid values like empty strings, whitespace, and '?'.
+    Excludes specified columns from conversion.
+    
+    Parameters:
+    - df: pandas DataFrame
+    - exclude_columns: list of column names to skip conversion
+    - verbose: bool, if True, prints details of conversions and issues
+    
+    Returns:
+    - df: DataFrame with converted datatypes
+    - summary: dict containing conversion details and any issues
+    """
+    summary = {
+        'columns_processed': [],
+        'conversions': {},
+        'issues': {}
+    }
+    
+    # Copy DataFrame to avoid modifying the original
+    df = df.copy()
+    
+    for column in df.columns:
+        if column in exclude_columns:
+            summary['conversions'][column] = f"Skipped (excluded column, dtype: {df[column].dtype})"
+            if verbose:
+                print(f"\nProcessing column: {column} (current dtype: {df[column].dtype})")
+                print(f" - Skipped (excluded column)")
+            continue
+        
+        summary['columns_processed'].append(column)
+        
+        # Get current dtype
+        current_dtype = df[column].dtype
+        if verbose:
+            print(f"\nProcessing column: {column} (current dtype: {current_dtype})")
+        
+        # Check for invalid values in object columns
+        if df[column].dtype == 'object':
+            # Count empty strings, whitespace-only, and '?'
+            empty_count = (df[column] == '').sum()
+            whitespace_count = df[column].str.isspace().sum()
+            question_mark_count = (df[column] == '?').sum()
+            total_invalid = empty_count + whitespace_count + question_mark_count
+            
+            if total_invalid > 0:
+                if verbose:
+                    print(f" - Found {empty_count} empty strings, {whitespace_count} whitespace-only, "
+                          f"{question_mark_count} '?' in {column}")
+                summary['issues'][column] = (f"Found {empty_count} empty strings, "
+                                           f"{whitespace_count} whitespace-only, "
+                                           f"{question_mark_count} '?'")
+                # Replace invalid values with NaN
+                df[column] = df[column].replace(['', ' ', '\t', '?'], np.nan)
+                # Replace any remaining whitespace-only strings
+                df[column] = df[column].apply(lambda x: np.nan if isinstance(x, str) and x.isspace() else x)
+        
+        # Determine appropriate datatype
+        try:
+            # Handle MI_MB (assume megabytes, numeric)
+            if column == 'MI_MB':
+                temp_series = pd.to_numeric(df[column], errors='coerce')
+                if temp_series.isna().sum() == df[column].isna().sum():
+                    df[column] = temp_series.astype('float32')
+                    summary['conversions'][column] = "Converted to float32 (megabytes)"
+                    if verbose:
+                        print(f" - Converted to float32 (megabytes)")
+                else:
+                    summary['issues'][column] = (f"Could not convert to numeric, "
+                                               f"{temp_series.isna().sum() - df[column].isna().sum()} invalid values")
+                    if verbose:
+                        print(f" - Could not convert to numeric due to invalid values")
+            
+            # Handle Digital_app_flag_30 (assume flag-like, convert to category)
+            elif column == 'Digital_app_flag_30':
+                unique_vals = df[column].dropna().unique()
+                if len(unique_vals) <= 10:
+                    df[column] = df[column].astype('category')
+                    summary['conversions'][column] = "Converted to category (flag)"
+                    if verbose:
+                        print(f" - Converted to category (flag)")
+                else:
+                    summary['issues'][column] = f"Too many unique values ({len(unique_vals)}) for category type"
+                    if verbose:
+                        print(f" - Too many unique values for category type")
+            
+            # Check if column is likely numeric (e.g., sum_*, max_* columns)
+            elif any(prefix in column.lower() for prefix in ['sum_', 'max_', 'count_']):
+                temp_series = pd.to_numeric(df[column], errors='coerce')
+                if temp_series.isna().sum() == df[column].isna().sum():
+                    # No new NaNs introduced, conversion is safe
+                    if temp_series.dropna().apply(lambda x: x.is_integer()).all():
+                        df[column] = temp_series.astype('Int64')
+                        new_dtype = 'Int64'
+                    else:
+                        df[column] = temp_series.astype('float32')
+                        new_dtype = 'float32'
+                    summary['conversions'][column] = f"Converted to {new_dtype} (numeric)"
+                    if verbose:
+                        print(f" - Converted to {new_dtype} (numeric)")
+                else:
+                    summary['issues'][column] = (f"Could not convert to numeric, "
+                                               f"{temp_series.isna().sum() - df[column].isna().sum()} invalid values")
+                    if verbose:
+                        print(f" - Could not convert to numeric due to invalid values")
+            
+            # Check if column is likely a flag (e.g., contains 'Flag' or 'FLAG')
+            elif 'Flag' in column or 'FLAG' in column:
+                unique_vals = df[column].dropna().unique()
+                if len(unique_vals) <= 10:
+                    df[column] = df[column].astype('category')
+                    summary['conversions'][column] = "Converted to category (flag)"
+                    if verbose:
+                        print(f" - Converted to category (flag)")
+                else:
+                    summary['issues'][column] = f"Too many unique values ({len(unique_vals)}) for category type"
+                    if verbose:
+                        print(f" - Too many unique values for category type")
+            
+            # Check for other categorical columns
+            elif column in ['Gender_Type_Cd', 'Offer_Name', 'Most_Used_Qism']:
+                df[column] = df[column].astype('category')
+                summary['conversions'][column] = "Converted to category"
+                if verbose:
+                    print(f" - Converted to category")
+            
+            # Special handling for age
+            elif column == 'age':
+                temp_series = pd.to_numeric(df[column], errors='coerce')
+                if temp_series.isna().sum() == df[column].isna().sum():
+                    non_na_values = temp_series.dropna()
+                    if not non_na_values.empty:
+                        min_val, max_val = non_na_values.min(), non_na_values.max()
+                        if pd.notna(min_val) and pd.notna(max_val):
+                            if min_val >= 0 and max_val <= 127:
+                                df[column] = temp_series.astype('Int8')
+                                new_dtype = 'Int8'
+                            elif min_val >= 0 and max_val <= 32767:
+                                df[column] = temp_series.astype('Int16')
+                                new_dtype = 'Int16'
+                            else:
+                                df[column] = temp_series.astype('Int32')
+                                new_dtype = 'Int32'
+                            summary['conversions'][column] = f"Converted to {new_dtype} (age)"
+                            if verbose:
+                                print(f" - Converted to {new_dtype} (age)")
+                    else:
+                        df[column] = temp_series.astype('Int8')
+                        summary['conversions'][column] = "Converted to Int8 (all NaN age)"
+                        if verbose:
+                            print(f" - Converted to Int8 (all NaN age)")
+                else:
+                    summary['issues'][column] = (f"Could not convert to numeric, "
+                                               f"{temp_series.isna().sum() - df[column].isna().sum()} invalid values")
+                    if verbose:
+                        print(f" - Could not convert to numeric due to invalid values")
+            
+            # Handle existing float64 columns
+            elif df[column].dtype in ['float64', 'float']:
+                df[column] = df[column].astype('float32')
+                summary['conversions'][column] = "Downcasted to float32"
+                if verbose:
+                    print(f" - Downcasted to float32")
+            
+            # Default: leave as object if no clear type identified
+            else:
+                summary['conversions'][column] = f"Remained {current_dtype} (no clear type)"
+                if verbose:
+                    print(f" - Remained {current_dtype} (no clear type)")
+        
+        except Exception as e:
+            summary['issues'][column] = f"Error during conversion: {str(e)}"
+            if verbose:
+                print(f" - Error during conversion: {str(e)}")
+    
+    # Print memory usage before and after
+    if verbose:
+        original_memory = df.memory_usage(deep=True).sum() / 1e6
+        print(f"\nOriginal memory usage: {original_memory:.2f} MB")
+        print(f"New memory usage: {df.memory_usage(deep=True).sum() / 1e6:.2f} MB")
+    
+    return df, summary
+df_converted, conversion_summary = inspect_and_convert_datatypes(df, exclude_columns=['Subscription_Id'], verbose=True)
+print("\nConversion Summary:")
+for col, action in conversion_summary['conversions'].items():
+    print(f"{col}: {action}")
+print("\nIssues:")
+for col, issue in conversion_summary['issues'].items():
+    print(f"{col}: {issue}")
+def optimize_int64_columns(df, verbose=True):
+    """
+    Optimizes columns with Int64 or int64 dtype to the smallest possible nullable integer type
+    (Int8, Int16, Int32, Int64) based on their data range.
+    
+    Parameters:
+    - df: pandas DataFrame
+    - verbose: bool, if True, prints details of optimizations
+    
+    Returns:
+    - df: DataFrame with optimized integer columns
+    - summary: dict containing optimization details and any issues
+    """
+    summary = {
+        'columns_processed': [],
+        'optimizations': {},
+        'issues': {}
+    }
+    
+    # Copy DataFrame to avoid modifying the original
+    df = df.copy()
+    
+    # Identify Int64 or int64 columns
+    int64_columns = df.select_dtypes(include=['Int64', 'int64']).columns
+    
+    if verbose and not int64_columns.empty:
+        print(f"\nFound {len(int64_columns)} columns with Int64/int64 dtype: {list(int64_columns)}")
+    elif verbose:
+        print("\nNo Int64/int64 columns found for optimization.")
+    
+    for column in int64_columns:
+        summary['columns_processed'].append(column)
+        
+        if verbose:
+            print(f"\nProcessing column: {column} (current dtype: {df[column].dtype})")
+        
+        try:
+            # Get non-NaN values to determine range
+            non_na_values = df[column].dropna()
+            if not non_na_values.empty:
+                min_val = non_na_values.min()
+                max_val = non_na_values.max()
+                
+                # Select smallest integer type based on range
+                if pd.notna(min_val) and pd.notna(max_val):
+                    if min_val >= -128 and max_val <= 127:
+                        df[column] = df[column].astype('Int8')
+                        new_dtype = 'Int8'
+                    elif min_val >= -32768 and max_val <= 32767:
+                        df[column] = df[column].astype('Int16')
+                        new_dtype = 'Int16'
+                    elif min_val >= -2147483648 and max_val <= 2147483647:
+                        df[column] = df[column].astype('Int32')
+                        new_dtype = 'Int32'
+                    else:
+                        df[column] = df[column].astype('Int64')
+                        new_dtype = 'Int64'
+                    summary['optimizations'][column] = f"Optimized to {new_dtype} (range: {min_val:.0f} to {max_val:.0f})"
+                    if verbose:
+                        print(f" - Optimized to {new_dtype} (range: {min_val:.0f} to {max_val:.0f})")
+                else:
+                    summary['issues'][column] = "Could not determine range due to invalid values"
+                    if verbose:
+                        print(f" - Could not determine range due to invalid values")
+            else:
+                # All values are NaN, use smallest type
+                df[column] = df[column].astype('Int8')
+                summary['optimizations'][column] = "Optimized to Int8 (all NaN)"
+                if verbose:
+                    print(f" - Optimized to Int8 (all NaN)")
+        
+        except Exception as e:
+            summary['issues'][column] = f"Error during optimization: {str(e)}"
+            if verbose:
+                print(f" - Error during optimization: {str(e)}")
+    
+    # Print memory usage before and after
+    original_memory = df.memory_usage(deep=True).sum() / 1e6
+    new_memory = df.memory_usage(deep=True).sum() / 1e6
+    if verbose:
+        print(f"\nOriginal memory usage: {original_memory:.2f} MB")
+        print(f"New memory usage: {new_memory:.2f} MB")
+        print(f"Memory savings: {original_memory - new_memory:.2f} MB ({((original_memory - new_memory) / original_memory * 100):.1f}%)")
+    
+    return df, summary
+# Step 2: Optimize Int64 columns
+df_optimized, optimization_summary = optimize_int64_columns(df_converted, verbose=True)
+
+# Print optimization summary
+print("\nOptimization Summary:")
+for col, action in optimization_summary['optimizations'].items():
+    print(f"{col}: {action}")
+print("\nIssues:")
+for col, issue in optimization_summary['issues'].items():
+    print(f"{col}: {issue}")
+
+# Check final datatypes
+print("\nFinal datatypes:")
+print(df_optimized.dtypes)
+
+# Check memory usage per column
+print("\nMemory usage per column (MB):")
+print(df_optimized.memory_usage(deep=True) / 1e6)
