@@ -1,0 +1,27 @@
+# DDL for both targte tables regarding short and medium OIM 
+CREATE TABLE IF NOT EXISTS analytics_prod.oim_short_term_raw (
+    subscription_id INT,
+    app_name STRING,
+    app_category STRING,
+    total_mbs STRING,
+    total_sessions INT,
+    access_days INT,
+    type STRING,
+    day STRING
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
+
+--------------------------------
+CREATE TABLE IF NOT EXISTS analytics_prod.oim_medium_term_raw (
+    subscription_id INT,
+    app_name STRING,
+    app_category STRING,
+    total_mbs STRING,
+    total_sessions INT,
+    access_days INT,
+    type STRING,
+    day STRING
+)
+PARTITIONED BY (dt STRING)
+STORED AS PARQUET;
