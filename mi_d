@@ -1,129 +1,222 @@
-import teradatasql
-import pandas as pd
-import json
-import time
-from datetime import date, timedelta
-
-# ---------------------------------------------------------
-# 1️⃣ Load Teradata credentials
-# ---------------------------------------------------------
-with open('creds.json', 'r') as f:
-    creds = json.load(f)
-
-# ---------------------------------------------------------
-# 2️⃣ Create Teradata connection
-# ---------------------------------------------------------
-db_conn = teradatasql.connect(
-host=creds['host'],
-user=creds['username'],
-password=creds['password']
+REATE MULTISET TABLE twm_result.Movement_index_Segments_pre ,FALLBACK ,
+     NO BEFORE JOURNAL,
+     NO AFTER JOURNAL,
+     CHECKSUM = DEFAULT,
+     DEFAULT MERGEBLOCKRATIO,
+     MAP = TD_MAP1
+     (
+      Subscription_Id INTEGER,	
+      Call_Start_Date BYTEINT,
+      Site_Id INTEGER)
+PRIMARY INDEX ( Subscription_Id );
+======================================
+CREATE MULTISET TABLE twm_result.Movement_index_Segments_daily ,FALLBACK ,
+     NO BEFORE JOURNAL,
+     NO AFTER JOURNAL,
+     CHECKSUM = DEFAULT,
+     DEFAULT MERGEBLOCKRATIO,
+     MAP = TD_MAP1
+     (
+      Subscription_Id INTEGER,
+      No_Sites INTEGER,
+      Quantile_D VARCHAR(12) CHARACTER SET Unicode NOT CaseSpecific,
+      Period_Id DATE FORMAT 'yyyy-mm-dd'
+	  )
+PRIMARY INDEX ( Subscription_Id )
+PARTITION BY Range_N(period_id  BETWEEN DATE '2007-01-01' AND DATE '2050-12-31' EACH INTERVAL '1' MONTH ,
+ NO RANGE OR UNKNOWN);
+=================================
+REPLACE PROCEDURE twm_result.P_Movement_Index_Segments_daily
+(
+IN "Processing_Date" DATE,
+IN "Options" CHARACTER(4) CHARACTER SET Latin,
+OUT Ret_Msg VARCHAR(100) CHARACTER SET	Latin
 )
-print("✅ Connected to Teradata")
 
-# ---------------------------------------------------------
-# 3️⃣ Configuration
-# ---------------------------------------------------------
-target_table = "aa_etg_dev.Movement_Index_Result_Daily_September"
-procedure_name = "twm_result.P_Movement_Index_Segments_daily"
+BEGIN
 
-# Must-have subscriptions
-target_subs = (177025573, 203541279, 171904850, 206595892)
+/*      Variable Declaration     */
+DECLARE             Check_Point_No INTEGER DEFAULT 0;
+DECLARE             Start_Time_Stamp TIMESTAMP(6);
+DECLARE             End_Time_Stamp TIMESTAMP(6);
+DECLARE             Counter DECIMAL(13,0) DEFAULT 0;
+DECLARE             Run_ID DECIMAL(13,0) DEFAULT 0;
+DECLARE             Script_Name  VARCHAR(200);
+DECLARE             Aggregate_Domain  VARCHAR(200);
+DECLARE             vQBStmt VARCHAR(256);
 
-# ---------------------------------------------------------
-# 4️⃣ Function: run the daily procedure
-# ---------------------------------------------------------
-def run_daily_procedure(process_date):
-    """
-    Executes the Movement Index daily procedure for the given date.
-    Returns True if success, False otherwise.
-    """
-    try:
-        with db_conn.cursor() as cursor:
-            ret_msg = None
-            cursor.callproc(procedure_name, [process_date, 'CG', ret_msg])
-            ret_msg = cursor.fetchone()[0] if cursor.description else "No message returned"
-            print(f"✅ {process_date} | Procedure completed | Message: {ret_msg}")
-            return True
-    except Exception as e:
-        print(f"❌ Error on {process_date}: {e}")
-        return False
 
-# ---------------------------------------------------------
-# 5️⃣ Function: extract 200K sample (ensuring target subs)
-# ---------------------------------------------------------
-def extract_daily_sample(process_date, sample_size=200000):
-    """
-    Extracts 200k sampled rows for the day ensuring target_subs are included.
-    """
-    query = f"""
-    SELECT * 
-    FROM twm_result.Movement_index_Segments_daily
-    WHERE Period_Id = DATE '{process_date}'
-    SAMPLE {sample_size}
-    """
-    df_sample = pd.read_sql(query, db_conn)
-    
-    # Ensure target_subs are included
-    placeholders = ",".join(str(x) for x in target_subs)
-    df_targets = pd.read_sql(
-    f"""
-    SELECT * 
-    FROM twm_result.Movement_index_Segments_daily
-    WHERE Period_Id = DATE '{process_date}'
-    AND Subscription_Id IN ({placeholders}) 
-    """, db_conn
-    )
-    
-    # Combine them (avoid duplicates)
-    df_final = pd.concat([df_sample, df_targets]).drop_duplicates(subset=["Subscription_Id"])
-    print(f"📊 {process_date}: Final sample size = {len(df_final)} rows")
-    return df_final
+/*       Handler which will execute when some error will occur in the script execution     */
+DECLARE EXIT HANDLER FOR SqlException
+BEGIN
 
-# ---------------------------------------------------------
-# 6️⃣ Function: insert sampled data into target table
-# ---------------------------------------------------------
-def insert_into_target_table(df):
-    """
-    Inserts dataframe into aa_etg_dev.Movement_Index_Result_Daily_September
-    """
-    if df.empty:
-        print("⚠️ No data to insert")
-        return
-    
-    insert_query = f"""
-    INSERT INTO {target_table} (Subscription_Id, No_Sites, Quantile_D, Period_Id)
-    VALUES (?, ?, ?, ?)
-    """
-    
-    records = df[['Subscription_Id', 'No_Sites', 'Quantile_D', 'Period_Id']].values.tolist()
-    
-    with db_conn.cursor() as cursor:
-        cursor.executemany(insert_query, records)
-        print(f"✅ Inserted {len(records)} rows into {target_table}")
+INSERT INTO twm_result.ERROR_LOG
+(
+	Error_Time
+	, Script_Name
+	, Check_Point
+	, SQL_Code
+	, SQL_State
+)
+VALUES
+(
+	Current_Timestamp
+	, :Script_Name
+	, :Check_Point_No
+	, :SqlCode
+	, :SqlState
+);    
+END;
 
-# ---------------------------------------------------------
-# 7️⃣ Loop through all September days
-# ---------------------------------------------------------
-start_date = date(2025, 9, 1)
-end_date = date(2025, 9, 30)
-current_date = start_date
+/*     Setting initial variables     */
 
-while current_date <= end_date:
-    print(f"\n🚀 Processing {current_date} ...")
-    
-    if run_daily_procedure(current_date):
-        # Extract and insert
-        df_sample = extract_daily_sample(current_date)
-        insert_into_target_table(df_sample)
-    else:
-        print(f"⚠️ Skipped {current_date} due to error")
-    
-    # Small pause between days
-    time.sleep(2)
-    current_date += timedelta(days=1)
+SET    Script_Name = 'P_Movement_Index_Segments_daily';
+SET    Aggregate_Domain = 'CVM';
+SET    vQBStmt = 'SET QUERY_BAND='''||'Agg_Domain=CVM;Script_Name=P_Movement_Index_Segments_daily;'||''''||' FOR SESSION '||';';
+/* Set the Query Band */
+CALL    DBC.SYSEXECSQL(vQBStmt);
 
-# ---------------------------------------------------------
-# 8️⃣ Close connection
-# ---------------------------------------------------------
-db_conn.close()
-print("\n🎉 All September days processed successfully!")
+
+/*     Creating Job Run ID     */
+SEL        
+Cast(Cast((Current_Timestamp (FORMAT 'YYYYMMDDHHMI')) AS CHAR(13)) AS DECIMAL(13, 0))
+INTO
+:Run_ID;
+
+/*      Calculating Aggregate     */
+
+CASE     
+WHEN  Options='CG'
+THEN
+-------------------------------------------===== Check Point 1================-------------------------------------------------------
+
+SET    Check_Point_No = 1;
+SET    Start_Time_Stamp = Current_Timestamp ;
+
+DELETE FROM twm_result.Movement_index_Segments_pre ALL;
+INSERT INTO twm_result.Movement_index_Segments_pre
+(
+	subscription_id
+	,Call_Start_Date
+	,site_id
+)
+SEL 
+	dsi.subscription_id
+	,b.Call_Start_Date
+	,G.site_id
+    FROM
+	(SEL  dsii.subscription_id FROM VDB.DETAILED_SUBSCRIPTION_INFO dsii WHERE dsii.subscription_Status_Group_Cd NOT IN (-1,4)  )dsi
+	INNER JOIN vdb.AGG_NW_ACT_SUBS_CELL b
+        ON dsi.Subscription_Id = b.Subscription_Id 
+    INNER  JOIN  vdb.cell G 
+        ON  G.cell_id = CASE WHEN b.Originating_Cell_Id = '-1' THEN NULL ELSE b.Originating_Cell_Id END 
+    WHERE 
+	(
+	Call_Start_Date = Processing_Date 
+	)
+GROUP BY 1,2,3;
+
+COLLECT STATS ON twm_result.Movement_index_Segments_pre  COLUMN subscription_id;
+ ---------------------------------------------- End of Check Point 1 -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter =  Activity_Count;
+
+INSERT INTO twm_result.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+
+--=================================================================================================================================================
+SET    Check_Point_No = 2;
+SET    Start_Time_Stamp = Current_Timestamp ;
+
+DELETE FROM twm_result.Movement_index_Segments_daily WHERE period_id = :Processing_Date ;
+INSERT INTO twm_result.Movement_index_Segments_daily
+(
+	subscription_id
+	,No_Sites
+	,Quantile_D
+	,Period_Id
+
+)	
+SEL
+	y.subscription_id
+	,y.No_Sites
+	,Quantile(7,No_Sites) AS Quantile_D
+	,Processing_Date AS Period_Id
+	FROM (
+SEL 
+	p.subscription_id
+	, Count (DISTINCT CASE WHEN p.call_start_Date = Processing_Date    THEN  p.site_id END) AS No_Sites
+	FROM  twm_result.Movement_index_Segments_pre p
+		 
+GROUP BY 1
+)y;
+
+COLLECT STATS ON twm_result.Movement_index_Segments_daily  COLUMN subscription_id;
+
+----------------------------------------------- End of Check Point 1 -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter =  Activity_Count;
+
+INSERT INTO twm_result.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+--=================================================================================================================================================
+DELETE FROM twm_result.Movement_index_Segments_pre ALL;
+DELETE FROM twm_result.Movement_index_Segments_daily WHERE period_id < :Processing_Date - 30;
+
+--=================================================================================================================================================
+SET RET_MSG = 'Aggregation Successfully Completed';
+
+ELSE
+
+SET RET_MSG = 'Aggregation Failed - Wrong Parameter Supplied'; 
+
+END CASE;
+
+END;
+--------------------------------------------------------------------------------------------------
+
+why i have this output:    RET_MSG= ?
