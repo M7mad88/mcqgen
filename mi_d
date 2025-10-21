@@ -1,0 +1,129 @@
+import teradatasql
+import pandas as pd
+import json
+import time
+from datetime import date, timedelta
+
+# ---------------------------------------------------------
+# 1️⃣ Load Teradata credentials
+# ---------------------------------------------------------
+with open('creds.json', 'r') as f:
+    creds = json.load(f)
+
+# ---------------------------------------------------------
+# 2️⃣ Create Teradata connection
+# ---------------------------------------------------------
+db_conn = teradatasql.connect(
+host=creds['host'],
+user=creds['username'],
+password=creds['password']
+)
+print("✅ Connected to Teradata")
+
+# ---------------------------------------------------------
+# 3️⃣ Configuration
+# ---------------------------------------------------------
+target_table = "aa_etg_dev.Movement_Index_Result_Daily_September"
+procedure_name = "twm_result.P_Movement_Index_Segments_daily"
+
+# Must-have subscriptions
+target_subs = (177025573, 203541279, 171904850, 206595892)
+
+# ---------------------------------------------------------
+# 4️⃣ Function: run the daily procedure
+# ---------------------------------------------------------
+def run_daily_procedure(process_date):
+    """
+    Executes the Movement Index daily procedure for the given date.
+    Returns True if success, False otherwise.
+    """
+    try:
+        with db_conn.cursor() as cursor:
+            ret_msg = None
+            cursor.callproc(procedure_name, [process_date, 'CG', ret_msg])
+            ret_msg = cursor.fetchone()[0] if cursor.description else "No message returned"
+            print(f"✅ {process_date} | Procedure completed | Message: {ret_msg}")
+            return True
+    except Exception as e:
+        print(f"❌ Error on {process_date}: {e}")
+        return False
+
+# ---------------------------------------------------------
+# 5️⃣ Function: extract 200K sample (ensuring target subs)
+# ---------------------------------------------------------
+def extract_daily_sample(process_date, sample_size=200000):
+    """
+    Extracts 200k sampled rows for the day ensuring target_subs are included.
+    """
+    query = f"""
+    SELECT * 
+    FROM twm_result.Movement_index_Segments_daily
+    WHERE Period_Id = DATE '{process_date}'
+    SAMPLE {sample_size}
+    """
+    df_sample = pd.read_sql(query, db_conn)
+    
+    # Ensure target_subs are included
+    placeholders = ",".join(str(x) for x in target_subs)
+    df_targets = pd.read_sql(
+    f"""
+    SELECT * 
+    FROM twm_result.Movement_index_Segments_daily
+    WHERE Period_Id = DATE '{process_date}'
+    AND Subscription_Id IN ({placeholders}) 
+    """, db_conn
+    )
+    
+    # Combine them (avoid duplicates)
+    df_final = pd.concat([df_sample, df_targets]).drop_duplicates(subset=["Subscription_Id"])
+    print(f"📊 {process_date}: Final sample size = {len(df_final)} rows")
+    return df_final
+
+# ---------------------------------------------------------
+# 6️⃣ Function: insert sampled data into target table
+# ---------------------------------------------------------
+def insert_into_target_table(df):
+    """
+    Inserts dataframe into aa_etg_dev.Movement_Index_Result_Daily_September
+    """
+    if df.empty:
+        print("⚠️ No data to insert")
+        return
+    
+    insert_query = f"""
+    INSERT INTO {target_table} (Subscription_Id, No_Sites, Quantile_D, Period_Id)
+    VALUES (?, ?, ?, ?)
+    """
+    
+    records = df[['Subscription_Id', 'No_Sites', 'Quantile_D', 'Period_Id']].values.tolist()
+    
+    with db_conn.cursor() as cursor:
+        cursor.executemany(insert_query, records)
+        print(f"✅ Inserted {len(records)} rows into {target_table}")
+
+# ---------------------------------------------------------
+# 7️⃣ Loop through all September days
+# ---------------------------------------------------------
+start_date = date(2025, 9, 1)
+end_date = date(2025, 9, 30)
+current_date = start_date
+
+while current_date <= end_date:
+    print(f"\n🚀 Processing {current_date} ...")
+    
+    if run_daily_procedure(current_date):
+        # Extract and insert
+        df_sample = extract_daily_sample(current_date)
+        insert_into_target_table(df_sample)
+    else:
+        print(f"⚠️ Skipped {current_date} due to error")
+    
+    # Small pause between days
+    time.sleep(2)
+    current_date += timedelta(days=1)
+
+# ---------------------------------------------------------
+# 8️⃣ Close connection
+# ---------------------------------------------------------
+db_conn.close()
+print("\n🎉 All September days processed successfully!")
