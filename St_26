@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+import sys
+import logging
+from datetime import datetime, timedelta
+from pyspark.sql import SparkSession
+
+# Logging setup
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
+
+
+def main():
+    try:
+        # Initialize Spark session
+        spark = SparkSession.builder \
+            .appName("Online_Model_Short_Term_Daily") \
+            .config("spark.sql.caseSensitive", "false") \
+            .config("hive.exec.dynamic.partition", "true") \
+            .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+            .config("spark.sql.sources.partitionOverwriteMode", "dynamic") \
+            .enableHiveSupport() \
+            .getOrCreate()
+
+        # Determine run date
+        if len(sys.argv) == 1:
+            run_date_dt = datetime.now().date()
+        elif len(sys.argv) == 2:
+            try:
+                run_date_dt = datetime.strptime(sys.argv[1], '%Y-%m-%d').date()
+            except ValueError:
+                logger.error("Invalid date format. Use YYYY-MM-DD.")
+                spark.stop()
+                sys.exit(1)
+        else:
+            logger.error("Usage: python combined_query_daily.py [YYYY-MM-DD]")
+            spark.stop()
+            sys.exit(1)
+
+        # Short-term window: last 3 days
+        st_from_date_dt = run_date_dt - timedelta(days=2)
+        st_from_date = st_from_date_dt.strftime('%Y-%m-%d')
+        st_to_date = run_date_dt.strftime('%Y-%m-%d')
+
+        run_type = "default" if len(sys.argv) == 1 else "recovery"
+        target_table = "hive.analytics_prod.oim_short_term_raw"
+
+        logger.info(f"Starting {run_type} short-term job for {st_from_date} → {st_to_date}")
+
+        # Base query across 4 sources
+        query = f"""
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                sum(cast(mbs AS decimal(18,6))) AS total_mbs,
+                cast(sum(no_of_sessions) AS INT) AS total_sessions,
+                COUNT(*) AS access_days,
+                'app' AS type,
+                day
+            FROM hive.analytics_prod.online_interest_protocols_daily
+            WHERE day BETWEEN '{st_from_date}' AND '{st_to_date}'
+            GROUP BY subscription_id, app_name, app_category, day
+
+            UNION ALL
+
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                0 AS total_mbs,
+                sum(no_of_sessions) AS total_sessions,
+                COUNT(*) AS access_days,
+                'url' AS type,
+                day
+            FROM hive.analytics_prod.online_interest_urls_daily
+            WHERE day BETWEEN '{st_from_date}' AND '{st_to_date}'
+            GROUP BY subscription_id, app_name, app_category, day
+
+            UNION ALL
+
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                0 AS total_mbs,
+                sum(no_of_sessions) AS total_sessions,
+                COUNT(*) AS access_days,
+                'sms' AS type,
+                day
+            FROM hive.analytics_prod.online_interest_sms_daily
+            WHERE day BETWEEN '{st_from_date}' AND '{st_to_date}'
+            GROUP BY subscription_id, app_name, app_category, day
+
+            UNION ALL
+
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                0 AS total_mbs,
+                sum(no_of_sessions) AS total_sessions,
+                COUNT(*) AS access_days,
+                'og' AS type,
+                day
+            FROM hive.analytics_prod.online_interest_og_calls_daily
+            WHERE day BETWEEN '{st_from_date}' AND '{st_to_date}'
+            GROUP BY subscription_id, app_name, app_category, day
+        """
+
+        # Load & deduplicate
+        logger.info("Executing combined query...")
+        df_base = spark.sql(query)
+        df_final = df_base.dropDuplicates(["subscription_id", "app_name", "app_category", "day"])
+
+        # --- Partition management ---
+        logger.info(f"Checking existing partitions for {st_to_date}...")
+        partitions_df = spark.sql(f"SHOW PARTITIONS {target_table}").filter(f"partition LIKE 'dt={st_to_date}'")
+
+        if partitions_df.count() > 0:
+            logger.info(f"Removing existing partition for dt={st_to_date} before write...")
+            spark.sql(f"ALTER TABLE {target_table} DROP IF EXISTS PARTITION (dt='{st_to_date}')")
+
+        # --- Write results ---
+        logger.info(f"Writing results into {target_table} for dt={st_to_date}...")
+        df_final.createOrReplaceTempView("tmp_short_term")
+
+        spark.sql(f"""
+            INSERT INTO TABLE {target_table} PARTITION (dt='{st_to_date}')
+            SELECT * FROM tmp_short_term
+        """)
+
+        logger.info(f"Short-term job completed successfully for {st_to_date}")
+
+    except Exception as e:
+        logger.error("Job failed: %s", str(e))
+        raise
+    finally:
+        spark.stop()
+
+
+if __name__ == "__main__":
+    main()
