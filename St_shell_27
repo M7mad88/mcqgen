@@ -8,9 +8,7 @@
 
 # Configuration
 PYTHON_SCRIPT="/home/cadmin/Scripts/Analytics_Scripts/OIM_Short_Mid/combined_query_daily.py"
-LOG_DIR="/home/cadmin/Scripts/Analytics_Scripts/OIM_Short_Mid/logs"
-LOG_FILE="$LOG_DIR/Short_Term.log"
-
+LOG_FILE="/home/cadmin/Scripts/Analytics_Scripts/OIM_Short_Mid/Short_Term.log"
 SPARK_SUBMIT_ARGS="--num-executors 6 \
   --executor-memory 10g \
   --executor-cores 4 \
@@ -20,22 +18,17 @@ SPARK_SUBMIT_ARGS="--num-executors 6 \
   --conf spark.dynamicAllocation.enabled=false \
   --queue root.users.cadmin"
 
-# Ensure log directory exists
-mkdir -p "$LOG_DIR"
-
 # Function to log messages
 log_message() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Rotate log file (keep latest under same name)
-if [ -f "$LOG_FILE" ]; then
-    mv "$LOG_FILE" "${LOG_FILE}.$(date +'%Y%m%d%H%M%S')" 2>/dev/null
-fi
+# Rotate log file
+mv "$LOG_FILE" "${LOG_FILE}.$(date +'%Y%m%d%H%M%S')" 2>/dev/null
 
 # Determine run type
 if [ $# -eq 0 ]; then
-    log_message "Starting default daily short-term run"
+    log_message "Starting daily short-term run"
 elif [ $# -eq 1 ]; then
     recovery_date="$1"
     if ! date -d "$recovery_date" >/dev/null 2>&1; then
@@ -48,7 +41,7 @@ else
     exit 1
 fi
 
-# Pass recovery date if provided
+# Set spark_args
 spark_args=()
 if [ $# -eq 1 ]; then
     spark_args=("$recovery_date")
