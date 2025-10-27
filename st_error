@@ -1,9 +1,0 @@
-Give this error
-2025-10-26 15:15:17 - Starting default daily short-term run
-2025-10-26 15:15:17 - Running Spark job...
-  File "/home/cadmin/Scripts/Analytics_Scripts/oim_short_term/combined_query_daily.py", line 51
-SyntaxError: Non-ASCII character '\xf0' in file /home/cadmin/Scripts/Analytics_Scripts/oim_short_term/combined_query_daily.py on line 51, but no encoding declared; see http://python.org/dev/peps/pep-0263/ for details
-25/10/26 15:15:19 INFO util.ShutdownHookManager: Shutdown hook called
-25/10/26 15:15:19 INFO util.ShutdownHookManager: Deleting directory /tmp/spark-8b0d2b66-d64b-487a-9505-e89382f5d46b
-2025-10-26 15:15:19 - ERROR: Short-term OIM job failed. Check logs for details.
-
