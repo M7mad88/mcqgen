@@ -1,0 +1,101 @@
+CREATE MULTISET TABLE aa_etg_dev.oim_short_term ,
+FALLBACK ,
+NO BEFORE JOURNAL,
+NO AFTER JOURNAL,
+CHECKSUM = DEFAULT,
+DEFAULT MERGEBLOCKRATIO,
+MAP = TD_MAP1
+(
+    sub_id_counts INTEGER,
+    total_interactions INTEGER,
+
+    -- Online Shopping
+    online_shopping_counts INTEGER,
+    online_shopping_sub_counts INTEGER,
+    online_shopping_access_days INTEGER,
+    online_shopping_app_mbs DECIMAL(38,9),
+
+    -- Travel
+    travel_flag_counts INTEGER,
+    travel_sub_counts INTEGER,
+    travel_access_days INTEGER,
+    travel_app_mbs DECIMAL(38,9),
+
+    -- Foodies
+    foodies_flag_counts INTEGER,
+    foodies_sub_counts INTEGER,
+    foodies_access_days INTEGER,
+    foodies_app_mbs DECIMAL(38,9),
+
+    -- Electronics and Computers
+    Electronics_and_Computers_counts INTEGER,
+    Electronics_and_Computers_sub_counts INTEGER,
+    Electronics_and_Computers_access_days INTEGER,
+
+    -- Fashion
+    fashion_flag_counts INTEGER,
+    fashion_sub_counts INTEGER,
+    fashion_access_days INTEGER,
+
+    -- Mobile Store
+    Mobile_Store_flag_counts INTEGER,
+    Mobile_Store_sub_counts INTEGER,
+    Mobile_Store_access_days INTEGER,
+
+    -- Grocery
+    grocery_flag_counts INTEGER,
+    grocery_sub_counts INTEGER,
+    grocery_access_days INTEGER,
+
+    -- Ride Booking
+    Ride_Booking_flag_counts INTEGER,
+    Ride_Booking_sub_counts INTEGER,
+    Ride_Booking_access_days INTEGER,
+    Ride_Booking_app_mbs DECIMAL(38,9),
+
+    -- Online Learning
+    Online_Learning_flag_counts INTEGER,
+    Online_Learning_sub_counts INTEGER,
+    Online_Learning_access_days INTEGER,
+    Online_Learning_app_mbs DECIMAL(38,9),
+
+    -- Medical
+    medical_flag_counts INTEGER,
+    medical_sub_counts INTEGER,
+    medical_access_days INTEGER,
+
+    -- Lifestyle
+    lifestyle_flag_counts INTEGER,
+    lifestyle_sub_counts INTEGER,
+    lifestyle_access_days INTEGER,
+
+    -- Health (beauty)
+    Health_flag_counts INTEGER,
+    Health_sub_counts INTEGER,
+    Health_access_days INTEGER,
+
+    -- Furniture
+    furniture_furnishing_flag_counts INTEGER,
+    furniture_furnishing_sub_counts INTEGER,
+    furniture_furnishing_access_days INTEGER,
+
+    -- Insurance
+    insurance_flag_counts INTEGER,
+    insurance_sub_counts INTEGER,
+    insurance_access_days INTEGER,
+
+    -- Education
+    Education_flag_counts INTEGER,
+    Education_sub_counts INTEGER,
+    Education_access_days INTEGER,
+
+    -- Entertainment
+    entertainment_flag_counts INTEGER,
+    entertainment_sub_counts INTEGER,
+    entertainment_access_days INTEGER,
+    entertainment_mbs DECIMAL(9,2),
+
+    -- Report Date (from PySpark lit())
+    report_date DATE FORMAT 'YYYY-MM-DD'
+)
+NO PRIMARY INDEX;
