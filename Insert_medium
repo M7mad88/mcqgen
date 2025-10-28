@@ -51,6 +51,9 @@ INSERT INTO aa_etg_dev.oim_medium_term VALUES (
     55006,
     50235,
     5,
+    241803,
+    238656,
+    5,
     1335480.53,
     DATE '2025-10-28'
 );
