@@ -1,0 +1,93 @@
+CREATE TABLE IF NOT EXISTS hive.analytics_prod.oim_medium_term_report (
+    sub_id_counts BIGINT,
+    total_interactions BIGINT,
+
+    -- 1. Online Shopping
+    online_shopping_counts BIGINT,
+    online_shopping_sub_counts BIGINT,
+    online_shopping_access_days INTEGER,
+    online_shopping_app_mbs DECIMAL(18,9),
+
+    -- 2. Travel
+    travel_flag_counts BIGINT,
+    travel_sub_counts BIGINT,
+    travel_access_days INTEGER,
+    travel_app_mbs DECIMAL(18,9),
+
+    -- 3. Foodies
+    foodies_flag_counts BIGINT,
+    foodies_sub_counts BIGINT,
+    foodies_access_days INTEGER,
+    foodies_app_mbs DECIMAL(18,9),
+
+    -- 4. Electronics and Computers
+    electronics_and_computers_counts BIGINT,
+    electronics_and_computers_sub_counts BIGINT,
+    electronics_and_computers_access_days INTEGER,
+
+    -- 5. Fashion
+    fashion_flag_counts BIGINT,
+    fashion_sub_counts BIGINT,
+    fashion_access_days INTEGER,
+
+    -- 6. Mobile Store
+    mobile_store_flag_counts BIGINT,
+    mobile_store_sub_counts BIGINT,
+    mobile_store_access_days INTEGER,
+
+    -- 7. Grocery
+    grocery_flag_counts BIGINT,
+    grocery_sub_counts BIGINT,
+    grocery_access_days INTEGER,
+
+    -- 8. Ride Booking
+    ride_booking_flag_counts BIGINT,
+    ride_booking_sub_counts BIGINT,
+    ride_booking_access_days INTEGER,
+    ride_booking_app_mbs DECIMAL(18,9),
+
+    -- 9. Online Learning
+    online_learning_flag_counts BIGINT,
+    online_learning_sub_counts BIGINT,
+    online_learning_access_days INTEGER,
+    online_learning_app_mbs DECIMAL(18,9),
+
+    -- 10. Medical
+    medical_flag_counts BIGINT,
+    medical_sub_counts BIGINT,
+    medical_access_days INTEGER,
+
+    -- 11. Health (Beauty)
+    health_flag_counts BIGINT,
+    health_sub_counts BIGINT,
+    health_access_days INTEGER,
+
+    -- 12. Furniture and Furnishing
+    furniture_furnishing_flag_counts BIGINT,
+    furniture_furnishing_sub_counts BIGINT,
+    furniture_furnishing_access_days INTEGER,
+
+    -- 13. Insurance
+    insurance_flag_counts BIGINT,
+    insurance_sub_counts BIGINT,
+    insurance_access_days INTEGER,
+
+    -- 14. Education
+    education_flag_counts BIGINT,
+    education_sub_counts BIGINT,
+    education_access_days INTEGER,
+
+    -- 15. Entertainment
+    entertainment_flag_counts BIGINT,
+    entertainment_sub_counts BIGINT,
+    entertainment_access_days INTEGER,
+    entertainment_app_mbs DECIMAL(9,2),
+
+    dt VARCHAR
+)
+WITH (
+    format = 'PARQUET',
+    parquet_compression = 'GZIP',
+    partitioned_by = ARRAY['dt'],
+    external_location = 'hdfs://user/hive/warehouse/analytics_prod.db/oim_medium_term_report'
+);
