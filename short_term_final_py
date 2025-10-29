@@ -1,0 +1,251 @@
+
+#!/usr/bin/env python
+import sys
+import logging
+from datetime import datetime, timedelta
+from pyspark.sql import SparkSession
+
+# ======================
+# Configure Logging
+# ======================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
+
+
+def main():
+    try:
+        # ======================
+        # Initialize Spark Session
+        # ======================
+        spark = SparkSession.builder \
+            .appName("Online_Model_Short_Term_Daily") \
+            .config("spark.sql.caseSensitive", "false") \
+            .config("hive.exec.dynamic.partition", "true") \
+            .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+            .config("spark.sql.warehouse.dir", "/user/hive/warehouse") \
+            .enableHiveSupport() \
+            .master("yarn") \
+            .getOrCreate()
+
+        # ======================
+        # Determine Run Date
+        # ======================
+        if len(sys.argv) == 1:
+            run_date_dt = datetime.now().date()
+        elif len(sys.argv) == 2:
+            try:
+                run_date_dt = datetime.strptime(sys.argv[1], '%Y-%m-%d').date()
+            except ValueError:
+                logger.error("Invalid date format. Use YYYY-MM-DD.")
+                spark.stop()
+                sys.exit(1)
+        else:
+            logger.error("Usage: python oim_short_term.py [YYYY-MM-DD]")
+            spark.stop()
+            sys.exit(1)
+
+        # ======================
+        # Short-term Window (3 days)
+        # ======================
+        st_from_date_dt = run_date_dt - timedelta(days=2)
+        st_from_date = st_from_date_dt.strftime('%Y-%m-%d')
+        st_to_date = run_date_dt.strftime('%Y-%m-%d')
+
+        run_type = "default" if len(sys.argv) == 1 else "recovery"
+        logger.info("Starting %s short-term run for %s to %s", run_type, st_from_date, st_to_date)
+
+        target_table = "analytics_prod.oim_short_term_raw"
+
+        # ======================
+        # Base Query (Fixed COUNT DISTINCT day)
+        # ======================
+        query = """
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                SUM(CAST(mbs AS decimal(18,6))) AS total_mbs,
+                CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+                COUNT(DISTINCT day) AS access_days,
+                'app' AS type,
+                '{to_date}' AS dt
+            FROM analytics_prod.online_interest_protocols_daily
+            WHERE day BETWEEN '{from_date}' AND '{to_date}'
+            GROUP BY subscription_id, app_name, app_category
+
+            UNION ALL
+
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                0 AS total_mbs,
+                CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+                COUNT(DISTINCT day) AS access_days,
+                'url' AS type,
+                '{to_date}' AS dt
+            FROM analytics_prod.online_interest_urls_daily
+            WHERE day BETWEEN '{from_date}' AND '{to_date}'
+            GROUP BY subscription_id, app_name, app_category
+
+            UNION ALL
+
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                0 AS total_mbs,
+                CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+                COUNT(DISTINCT day) AS access_days,
+                'sms' AS type,
+                '{to_date}' AS dt
+            FROM analytics_prod.online_interest_sms_daily
+            WHERE day BETWEEN '{from_date}' AND '{to_date}'
+            GROUP BY subscription_id, app_name, app_category
+
+            UNION ALL
+
+            SELECT
+                subscription_id,
+                app_name,
+                lower(app_category) AS app_category,
+                0 AS total_mbs,
+                CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+                COUNT(DISTINCT day) AS access_days,
+                'og' AS type,
+                '{to_date}' AS dt
+            FROM analytics_prod.online_interest_og_calls_daily
+            WHERE day BETWEEN '{from_date}' AND '{to_date}'
+            GROUP BY subscription_id, app_name, app_category
+        """.format(from_date=st_from_date, to_date=st_to_date)
+
+        logger.info("Executing base query for short-term run...")
+        df_base = spark.sql(query)
+
+        # ======================
+        # Write to Target Table
+        # ======================
+        logger.info("Writing to target table %s for dt=%s...", target_table, st_to_date)
+        try:
+            spark.sql("""
+                INSERT OVERWRITE TABLE {target_table} PARTITION (dt = '{to_date}')
+                SELECT * FROM ({query}) base
+            """.format(target_table=target_table, to_date=st_to_date, query=query))
+            logger.info("Successfully overwrote partition dt=%s in %s.", st_to_date, target_table)
+        except Exception as e:
+            logger.error("Failed to write to target table: %s", str(e))
+            spark.stop()
+            sys.exit(1)
+
+        # ======================
+        # Generate KPI Report
+        # ======================
+        kpi_query = """
+            WITH base AS (
+                SELECT *
+                FROM {target_table}
+                WHERE dt = '{report_date}'
+            ),
+            cat_agg AS (
+                SELECT
+                    lower(app_category) AS app_category,
+                    COUNT(*) AS interaction_count,
+                    COUNT(DISTINCT subscription_id) AS sub_count,
+                    MAX(access_days) AS max_access_days,
+                    CAST(SUM(CASE WHEN type = 'app' THEN CAST(total_mbs AS decimal(38,9)) ELSE 0 END) AS decimal(38,9)) AS app_mbs
+                FROM base
+                GROUP BY lower(app_category)
+            )
+            SELECT
+                (SELECT COUNT(DISTINCT subscription_id) FROM base) AS sub_id_counts,
+                (SELECT COUNT(*) FROM base) AS total_interactions,
+                SUM(CASE WHEN app_category = 'online shopping' THEN interaction_count ELSE 0 END) AS online_shopping_counts,
+                SUM(CASE WHEN app_category = 'online shopping' THEN sub_count ELSE 0 END) AS online_shopping_sub_counts,
+                MAX(CASE WHEN app_category = 'online shopping' THEN max_access_days ELSE 0 END) AS online_shopping_access_days,
+                SUM(CASE WHEN app_category = 'online shopping' THEN app_mbs ELSE 0 END) AS online_shopping_app_mbs,
+                SUM(CASE WHEN app_category = 'travel' THEN interaction_count ELSE 0 END) AS travel_flag_counts,
+                SUM(CASE WHEN app_category = 'travel' THEN sub_count ELSE 0 END) AS travel_sub_counts,
+                MAX(CASE WHEN app_category = 'travel' THEN max_access_days ELSE 0 END) AS travel_access_days,
+                SUM(CASE WHEN app_category = 'travel' THEN app_mbs ELSE 0 END) AS travel_app_mbs,
+                SUM(CASE WHEN app_category = 'foodies' THEN interaction_count ELSE 0 END) AS foodies_flag_counts,
+                SUM(CASE WHEN app_category = 'foodies' THEN sub_count ELSE 0 END) AS foodies_sub_counts,
+                MAX(CASE WHEN app_category = 'foodies' THEN max_access_days ELSE 0 END) AS foodies_access_days,
+                SUM(CASE WHEN app_category = 'foodies' THEN app_mbs ELSE 0 END) AS foodies_app_mbs,
+                SUM(CASE WHEN app_category = 'electronics and computers' THEN interaction_count ELSE 0 END) AS Electronics_and_Computers_counts,
+                (SELECT COUNT(DISTINCT subscription_id) FROM base WHERE app_category = 'electronics and computers' AND lower(app_name) NOT IN ('vodafone', 'orange', 'etisalat')) AS Electronics_and_Computers_sub_counts,
+                MAX(CASE WHEN app_category = 'electronics and computers' THEN max_access_days ELSE 0 END) AS Electronics_and_Computers_access_days,
+                SUM(CASE WHEN app_category = 'fashion' THEN interaction_count ELSE 0 END) AS fashion_flag_counts,
+                SUM(CASE WHEN app_category = 'fashion' THEN sub_count ELSE 0 END) AS fashion_sub_counts,
+                MAX(CASE WHEN app_category = 'fashion' THEN max_access_days ELSE 0 END) AS fashion_access_days,
+                SUM(CASE WHEN app_category = 'mobile store' THEN interaction_count ELSE 0 END) AS Mobile_Store_flag_counts,
+                SUM(CASE WHEN app_category = 'mobile store' THEN sub_count ELSE 0 END) AS Mobile_Store_sub_counts,
+                MAX(CASE WHEN app_category = 'mobile store' THEN max_access_days ELSE 0 END) AS Mobile_Store_access_days,
+                SUM(CASE WHEN app_category = 'grocery' THEN interaction_count ELSE 0 END) AS grocery_flag_counts,
+                SUM(CASE WHEN app_category = 'grocery' THEN sub_count ELSE 0 END) AS grocery_sub_counts,
+                MAX(CASE WHEN app_category = 'grocery' THEN max_access_days ELSE 0 END) AS grocery_access_days,
+                SUM(CASE WHEN app_category = 'ride booking' THEN interaction_count ELSE 0 END) AS Ride_Booking_flag_counts,
+                SUM(CASE WHEN app_category = 'ride booking' THEN sub_count ELSE 0 END) AS Ride_Booking_sub_counts,
+                MAX(CASE WHEN app_category = 'ride booking' THEN max_access_days ELSE 0 END) AS Ride_Booking_access_days,
+                SUM(CASE WHEN app_category = 'ride booking' THEN app_mbs ELSE 0 END) AS Ride_Booking_app_mbs,
+                SUM(CASE WHEN app_category = 'online learning' THEN interaction_count ELSE 0 END) AS Online_Learning_flag_counts,
+                SUM(CASE WHEN app_category = 'online learning' THEN sub_count ELSE 0 END) AS Online_Learning_sub_counts,
+                MAX(CASE WHEN app_category = 'online learning' THEN max_access_days ELSE 0 END) AS Online_Learning_access_days,
+                SUM(CASE WHEN app_category = 'online learning' THEN app_mbs ELSE 0 END) AS Online_Learning_app_mbs,
+                SUM(CASE WHEN app_category = 'medical' THEN interaction_count ELSE 0 END) AS medical_flag_counts,
+                SUM(CASE WHEN app_category = 'medical' THEN sub_count ELSE 0 END) AS medical_sub_counts,
+                MAX(CASE WHEN app_category = 'medical' THEN max_access_days ELSE 0 END) AS medical_access_days,
+                SUM(CASE WHEN app_category = 'lifestyle' THEN interaction_count ELSE 0 END) AS lifestyle_flag_counts,
+                SUM(CASE WHEN app_category = 'lifestyle' THEN sub_count ELSE 0 END) AS lifestyle_sub_counts,
+                MAX(CASE WHEN app_category = 'lifestyle' THEN max_access_days ELSE 0 END) AS lifestyle_access_days,
+                SUM(CASE WHEN app_category IN ('beauty') THEN interaction_count ELSE 0 END) AS Health_flag_counts,
+                SUM(CASE WHEN app_category IN ('beauty') THEN sub_count ELSE 0 END) AS Health_sub_counts,
+                MAX(CASE WHEN app_category IN ('beauty') THEN max_access_days ELSE 0 END) AS Health_access_days,
+                SUM(CASE WHEN app_category IN ('furniture', 'furniture furnishing services') THEN interaction_count ELSE 0 END) AS furniture_furnishing_flag_counts,
+                SUM(CASE WHEN app_category IN ('furniture', 'furniture furnishing services') THEN sub_count ELSE 0 END) AS furniture_furnishing_sub_counts,
+                MAX(CASE WHEN app_category IN ('furniture', 'furniture furnishing services') THEN max_access_days ELSE 0 END) AS furniture_furnishing_access_days,
+                SUM(CASE WHEN app_category = 'insurance' THEN interaction_count ELSE 0 END) AS insurance_flag_counts,
+                SUM(CASE WHEN app_category = 'insurance' THEN sub_count ELSE 0 END) AS insurance_sub_counts,
+                MAX(CASE WHEN app_category = 'insurance' THEN max_access_days ELSE 0 END) AS insurance_access_days,
+                SUM(CASE WHEN app_category IN ('education', 'Education') THEN interaction_count ELSE 0 END) AS Education_flag_counts,
+                SUM(CASE WHEN app_category IN ('education', 'Education') THEN sub_count ELSE 0 END) AS Education_sub_counts,
+                MAX(CASE WHEN app_category IN ('education', 'Education') THEN max_access_days ELSE 0 END) AS Education_access_days,
+                SUM(CASE WHEN app_category = 'entertainment' THEN interaction_count ELSE 0 END) AS entertainment_flag_counts,
+                SUM(CASE WHEN app_category = 'entertainment' THEN sub_count ELSE 0 END) AS entertainment_sub_counts,
+                MAX(CASE WHEN app_category = 'entertainment' THEN max_access_days ELSE 0 END) AS entertainment_access_days,
+                CAST(SUM(CASE WHEN app_category = 'entertainment' THEN app_mbs ELSE 0 END) AS DECIMAL(9,2)) AS entertainment_mbs
+            FROM cat_agg
+        """.format(target_table=target_table, report_date=st_to_date)
+
+        logger.info("Generating Short-Term Report...")
+        df_short = spark.sql(kpi_query)
+        df_short.show(truncate=False)
+
+        # ======================
+        # Save Report Table
+        # ======================
+        report_table = "analytics_prod.oim_short_term_report_%s" % st_to_date.replace('-', '')
+        try:
+            df_short.write \
+                .format('parquet') \
+                .option("compression", "gzip") \
+                .mode('overwrite') \
+                .saveAsTable(report_table)
+            logger.info("Short-term report saved to %s.", report_table)
+        except Exception as e:
+            logger.error("Failed to write short-term report: %s", str(e))
+
+        logger.info("Short-term job completed successfully.")
+
+    except Exception as e:
+        logger.error("Job failed: %s", str(e))
+        raise
+    finally:
+        spark.stop()
+
+
+if __name__ == "__main__":
+    main()
