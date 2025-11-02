@@ -1,0 +1,657 @@
+import teradatasql
+import pandas as pd
+import json
+import time
+from datetime import date, timedelta
+
+# ---------------------------------------------------------
+# 1️⃣ Load Teradata credentials
+# ---------------------------------------------------------
+with open('creds.json', 'r') as f:
+    creds = json.load(f)
+
+# ---------------------------------------------------------
+# 2️⃣ Create Teradata connection
+# ---------------------------------------------------------
+db_conn = teradatasql.connect(
+host=creds['host'],
+user=creds['username'],
+password=creds['password']
+)
+print("✅ Connected to Teradata")
+
+# ---------------------------------------------------------
+# 3️⃣ Configuration
+# ---------------------------------------------------------
+target_table = "aa_etg_dev.Movement_Index_Result_Daily_September"
+procedure_name = "twm_result.P_Movement_Index_Segments_daily"
+target_subs = (177025573, 203541279, 171904850, 206595892)
+sample_size = 100000
+
+# ---------------------------------------------------------
+# 4️⃣ Function: run the daily procedure
+# ---------------------------------------------------------
+def run_daily_procedure(process_date):
+    """
+    Executes the Movement Index daily procedure for the given date.
+    Returns True if success, False otherwise.
+    """
+    try:
+        with db_conn.cursor() as cursor:
+            ret_msg = None
+            cursor.callproc(procedure_name, [process_date, 'CG', ret_msg])
+            ret_msg = cursor.fetchone()[0] if cursor.description else "No message returned"
+            print(f"✅ {process_date} | Procedure completed | Message: {ret_msg}")
+            return True
+    except Exception as e:
+        print(f"❌ Error on {process_date}: {e}")
+        return False
+
+# ---------------------------------------------------------
+# 5️⃣ Function: create a fixed 100K sample once (on Sept 1)
+# ---------------------------------------------------------
+def get_fixed_sample_subs(sample_date, sample_size=100000):
+    """
+    Gets a fixed 100K subs to use across the month (ensuring target_subs are included).
+    """
+    query = f"""
+    SELECT Subscription_Id
+    FROM twm_result.Movement_index_Segments_daily
+    WHERE Period_Id = DATE '{sample_date}'
+    QUALIFY ROW_NUMBER() OVER (ORDER BY Subscription_Id) <= {sample_size}
+    """
+    df_sample = pd.read_sql(query, db_conn)
+    
+    # Ensure target subs included
+    placeholders = ",".join(str(x) for x in target_subs)
+    df_targets = pd.read_sql(
+    f"""
+    SELECT Subscription_Id
+    FROM twm_result.Movement_index_Segments_daily
+    WHERE Period_Id = DATE '{sample_date}'
+    AND Subscription_Id IN ({placeholders})
+    """,
+    db_conn
+    )
+    
+    df_final = pd.concat([df_sample, df_targets]).drop_duplicates(subset=["Subscription_Id"])
+    print(f"📦 Fixed monthly sample created with {len(df_final)} unique Subscription_Ids")
+    return df_final
+
+# ---------------------------------------------------------
+# 6️⃣ Function: extract daily data for the fixed subs
+# ---------------------------------------------------------
+def extract_daily_records(process_date, sub_list):
+    """
+    Extracts the daily Movement Index records for the fixed set of Subscription_Ids.
+    """
+    placeholders = ",".join(map(str, sub_list))
+    query = f"""
+    SELECT Subscription_Id, No_Sites, Quantile_D, Period_Id
+    FROM twm_result.Movement_index_Segments_daily
+    WHERE Period_Id = DATE '{process_date}'
+    AND Subscription_Id IN ({placeholders})
+    """
+    df = pd.read_sql(query, db_conn)
+    print(f"📊 {process_date}: Retrieved {len(df)} records for fixed subs")
+    return df
+
+# ---------------------------------------------------------
+# 7️⃣ Function: insert into target table
+# ---------------------------------------------------------
+def insert_into_target_table(df):
+    """
+    Inserts the daily records into the target table.
+    """
+    if df.empty:
+        print("⚠️ No data to insert")
+        return
+    
+    insert_query = f"""
+    INSERT INTO {target_table} (Subscription_Id, No_Sites, Quantile_D, Period_Id)
+    VALUES (?, ?, ?, ?)
+    """
+    
+    records = df[['Subscription_Id', 'No_Sites', 'Quantile_D', 'Period_Id']].values.tolist()
+    
+    with db_conn.cursor() as cursor:
+        cursor.executemany(insert_query, records)
+    db_conn.commit()
+    
+    print(f"✅ Inserted {len(records)} rows into {target_table}")
+
+# ---------------------------------------------------------
+# 8️⃣ Main loop through all September days
+# ---------------------------------------------------------
+start_date = date(2025, 9, 1)
+end_date = date(2025, 9, 30)
+current_date = start_date
+
+# Generate fixed sample once from Sept 1
+fixed_sample_df = get_fixed_sample_subs(start_date, sample_size)
+fixed_sub_list = fixed_sample_df['Subscription_Id'].tolist()
+
+# Optional: check for previously processed dates to skip
+processed_dates = pd.read_sql(
+f"SELECT DISTINCT CAST(Period_Id AS DATE) AS Period_Id FROM {target_table}",
+db_conn
+)['Period_Id'].tolist()
+
+while current_date <= end_date:
+    if current_date in processed_dates:
+        print(f"⏭️ {current_date} already processed, skipping.")
+        current_date += timedelta(days=1)
+        continue
+    
+    print(f"\n🚀 Processing {current_date} ...")
+    
+    if run_daily_procedure(current_date):
+        df_daily = extract_daily_records(current_date, fixed_sub_list)
+        insert_into_target_table(df_daily)
+    else:
+        print(f"⚠️ Skipped {current_date} due to error")
+    
+    time.sleep(2)
+    current_date += timedelta(days=1)
+
+# ---------------------------------------------------------
+# 9️⃣ Close connection
+# ---------------------------------------------------------
+db_conn.close()
+print("\n🎉 All September days processed successfully with fixed 100K subs!")
+
+-------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+✅ Connected to Teradata
+
+🚀 Processing 2025-09-01 ...
+✅ 2025-09-01 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-01: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-02 ...
+✅ 2025-09-02 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-02: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-03 ...
+✅ 2025-09-03 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-03: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-04 ...
+✅ 2025-09-04 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-04: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-05 ...
+✅ 2025-09-05 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-05: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-06 ...
+✅ 2025-09-06 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-06: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-07 ...
+✅ 2025-09-07 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-07: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-08 ...
+✅ 2025-09-08 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-08: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-09 ...
+✅ 2025-09-09 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-09: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-10 ...
+✅ 2025-09-10 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-10: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-11 ...
+✅ 2025-09-11 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-11: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-12 ...
+✅ 2025-09-12 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-12: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-13 ...
+✅ 2025-09-13 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-13: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-14 ...
+✅ 2025-09-14 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-14: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-15 ...
+✅ 2025-09-15 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-15: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-16 ...
+✅ 2025-09-16 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-16: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-17 ...
+✅ 2025-09-17 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-17: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-18 ...
+✅ 2025-09-18 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-18: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-19 ...
+✅ 2025-09-19 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-19: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-20 ...
+✅ 2025-09-20 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-20: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-21 ...
+✅ 2025-09-21 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-21: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-22 ...
+✅ 2025-09-22 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-22: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-23 ...
+✅ 2025-09-23 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-23: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-24 ...
+✅ 2025-09-24 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-24: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-25 ...
+✅ 2025-09-25 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-25: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-26 ...
+✅ 2025-09-26 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-26: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-27 ...
+✅ 2025-09-27 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-27: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-28 ...
+✅ 2025-09-28 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-28: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-29 ...
+✅ 2025-09-29 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-29: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-30 ...
+✅ 2025-09-30 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:64: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_27500\977874958.py:68: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📊 2025-09-30: Final sample size = 200003 rows
+✅ Inserted 200003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🎉 All September days processed successfully!
+✅ Connected to Teradata
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:63: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_sample = pd.read_sql(query, db_conn)
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:67: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df_targets = pd.read_sql(
+📦 Fixed monthly sample created with 100003 unique Subscription_Ids
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:135: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  processed_dates = pd.read_sql(
+
+🚀 Processing 2025-09-01 ...
+✅ 2025-09-01 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-01: Retrieved 100003 records for fixed subs
+✅ Inserted 100003 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-02 ...
+✅ 2025-09-02 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-02: Retrieved 94696 records for fixed subs
+✅ Inserted 94696 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-03 ...
+✅ 2025-09-03 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-03: Retrieved 94596 records for fixed subs
+✅ Inserted 94596 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-04 ...
+✅ 2025-09-04 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-04: Retrieved 93288 records for fixed subs
+✅ Inserted 93288 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-05 ...
+✅ 2025-09-05 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-05: Retrieved 91487 records for fixed subs
+✅ Inserted 91487 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-06 ...
+✅ 2025-09-06 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-06: Retrieved 91721 records for fixed subs
+✅ Inserted 91721 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-07 ...
+✅ 2025-09-07 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-07: Retrieved 91331 records for fixed subs
+✅ Inserted 91331 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-08 ...
+✅ 2025-09-08 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-08: Retrieved 92799 records for fixed subs
+✅ Inserted 92799 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-09 ...
+✅ 2025-09-09 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-09: Retrieved 91864 records for fixed subs
+✅ Inserted 91864 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-10 ...
+✅ 2025-09-10 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-10: Retrieved 91574 records for fixed subs
+✅ Inserted 91574 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-11 ...
+✅ 2025-09-11 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-11: Retrieved 91569 records for fixed subs
+✅ Inserted 91569 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-12 ...
+✅ 2025-09-12 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-12: Retrieved 90862 records for fixed subs
+✅ Inserted 90862 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-13 ...
+✅ 2025-09-13 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-13: Retrieved 91630 records for fixed subs
+✅ Inserted 91630 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-14 ...
+✅ 2025-09-14 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-14: Retrieved 90952 records for fixed subs
+✅ Inserted 90952 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-15 ...
+✅ 2025-09-15 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-15: Retrieved 93156 records for fixed subs
+✅ Inserted 93156 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-16 ...
+✅ 2025-09-16 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-16: Retrieved 91749 records for fixed subs
+✅ Inserted 91749 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-17 ...
+✅ 2025-09-17 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-17: Retrieved 92625 records for fixed subs
+✅ Inserted 92625 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-18 ...
+✅ 2025-09-18 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-18: Retrieved 91363 records for fixed subs
+✅ Inserted 91363 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-19 ...
+✅ 2025-09-19 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-19: Retrieved 90118 records for fixed subs
+✅ Inserted 90118 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-20 ...
+✅ 2025-09-20 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-20: Retrieved 91718 records for fixed subs
+✅ Inserted 91718 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-21 ...
+✅ 2025-09-21 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-21: Retrieved 90892 records for fixed subs
+✅ Inserted 90892 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-22 ...
+✅ 2025-09-22 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-22: Retrieved 91629 records for fixed subs
+✅ Inserted 91629 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-23 ...
+✅ 2025-09-23 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-23: Retrieved 90758 records for fixed subs
+✅ Inserted 90758 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-24 ...
+✅ 2025-09-24 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-24: Retrieved 92334 records for fixed subs
+✅ Inserted 92334 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-25 ...
+✅ 2025-09-25 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-25: Retrieved 91114 records for fixed subs
+✅ Inserted 91114 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-26 ...
+✅ 2025-09-26 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-26: Retrieved 90240 records for fixed subs
+✅ Inserted 90240 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-27 ...
+✅ 2025-09-27 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-27: Retrieved 91136 records for fixed subs
+✅ Inserted 91136 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-28 ...
+✅ 2025-09-28 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-28: Retrieved 91791 records for fixed subs
+✅ Inserted 91791 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-29 ...
+✅ 2025-09-29 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-29: Retrieved 92487 records for fixed subs
+✅ Inserted 92487 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🚀 Processing 2025-09-30 ...
+✅ 2025-09-30 | Procedure completed | Message: Aggregation Successfully Completed
+C:\Users\Mohamed.AHRamadan\AppData\Local\Temp\ipykernel_18228\2850373954.py:95: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  df = pd.read_sql(query, db_conn)
+📊 2025-09-30: Retrieved 90593 records for fixed subs
+✅ Inserted 90593 rows into aa_etg_dev.Movement_Index_Result_Daily_September
+
+🎉 All September days processed successfully with fixed 100K subs!
