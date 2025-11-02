@@ -1,0 +1,193 @@
+
+REPLACE PROCEDURE twm_result.P_Movement_Index_Segments_daily
+(
+IN "Processing_Date" DATE,
+IN "Options" CHARACTER(4) CHARACTER SET Latin,
+OUT Ret_Msg VARCHAR(100) CHARACTER SET	Latin
+)
+
+BEGIN
+
+/*      Variable Declaration     */
+DECLARE             Check_Point_No INTEGER DEFAULT 0;
+DECLARE             Start_Time_Stamp TIMESTAMP(6);
+DECLARE             End_Time_Stamp TIMESTAMP(6);
+DECLARE             Counter DECIMAL(13,0) DEFAULT 0;
+DECLARE             Run_ID DECIMAL(13,0) DEFAULT 0;
+DECLARE             Script_Name  VARCHAR(200);
+DECLARE             Aggregate_Domain  VARCHAR(200);
+DECLARE             vQBStmt VARCHAR(256);
+
+
+/*       Handler which will execute when some error will occur in the script execution     */
+DECLARE EXIT HANDLER FOR SqlException
+BEGIN
+
+INSERT INTO twm_result.ERROR_LOG
+(
+	Error_Time
+	, Script_Name
+	, Check_Point
+	, SQL_Code
+	, SQL_State
+)
+VALUES
+(
+	Current_Timestamp
+	, :Script_Name
+	, :Check_Point_No
+	, :SqlCode
+	, :SqlState
+);    
+END;
+
+/*     Setting initial variables     */
+
+SET    Script_Name = 'P_Movement_Index_Segments_daily';
+SET    Aggregate_Domain = 'CVM';
+SET    vQBStmt = 'SET QUERY_BAND='''||'Agg_Domain=CVM;Script_Name=P_Movement_Index_Segments_daily;'||''''||' FOR SESSION '||';';
+/* Set the Query Band */
+CALL    DBC.SYSEXECSQL(vQBStmt);
+
+
+/*     Creating Job Run ID     */
+SEL        
+Cast(Cast((Current_Timestamp (FORMAT 'YYYYMMDDHHMI')) AS CHAR(13)) AS DECIMAL(13, 0))
+INTO
+:Run_ID;
+
+/*      Calculating Aggregate     */
+
+CASE     
+WHEN  Options='CG'
+THEN
+-------------------------------------------===== Check Point 1================-------------------------------------------------------
+
+SET    Check_Point_No = 1;
+SET    Start_Time_Stamp = Current_Timestamp ;
+
+DELETE FROM twm_result.Movement_index_Segments_pre ALL;
+INSERT INTO twm_result.Movement_index_Segments_pre
+(
+	subscription_id
+	,Call_Start_Date
+	,site_id
+	,Total_MI_Usage	
+)
+SEL 
+	dsi.subscription_id
+	,b.Call_Start_Date
+	,G.site_id
+	,Sum(CASE WHEN b.Network_Activity_Type_Cd = '11' THEN Data_Volume/1024.00/1024.00 end) AS Total_MI_Usage
+    FROM
+	(SEL  dsii.subscription_id FROM VDB.DETAILED_SUBSCRIPTION_INFO dsii WHERE dsii.subscription_Status_Group_Cd NOT IN (-1,4)  )dsi
+	INNER JOIN vdb.AGG_NW_ACT_SUBS_CELL b
+        ON dsi.Subscription_Id = b.Subscription_Id 
+    INNER  JOIN  vdb.cell G 
+        ON  G.cell_id = CASE WHEN b.Originating_Cell_Id = '-1' THEN NULL ELSE b.Originating_Cell_Id END 
+    WHERE 
+	(
+	Call_Start_Date = Processing_Date
+	)
+GROUP BY 1,2,3;
+
+COLLECT STATS ON twm_result.Movement_index_Segments_pre  COLUMN subscription_id;
+ ---------------------------------------------- End of Check Point 1 -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter =  Activity_Count;
+
+INSERT INTO twm_result.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+
+--=================================================================================================================================================
+SET    Check_Point_No = 2;
+SET    Start_Time_Stamp = Current_Timestamp ;
+
+DELETE FROM twm_result.Movement_index_Segments_daily WHERE period_id = :Processing_Date ;
+INSERT INTO twm_result.Movement_index_Segments_daily
+(
+	subscription_id
+	,No_Sites 
+	,Quantile_D
+	,Period_Id
+)	
+SEL
+	y.subscription_id
+	,y.No_Sites
+	,Quantile(7,No_Sites) AS Quantile_D
+	,Processing_Date AS Period_Id
+	FROM (
+SEL 
+	p.subscription_id
+	, Count (DISTINCT CASE WHEN p.call_start_Date = Processing_Date    THEN  p.site_id END) AS No_Sites	
+	FROM  twm_result.Movement_index_Segments_pre p
+		 
+GROUP BY 1
+)y;
+
+COLLECT STATS ON twm_result.Movement_index_Segments_daily  COLUMN subscription_id;
+
+----------------------------------------------- End of Check Point 1 -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter =  Activity_Count;
+
+INSERT INTO twm_result.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+--=================================================================================================================================================
+DELETE FROM twm_result.Movement_index_Segments_pre ALL;
+DELETE FROM twm_result.Movement_index_Segments_daily WHERE period_id < :Processing_Date - 30;
+
+--=================================================================================================================================================
+SET RET_MSG = 'Aggregation Successfully Completed';
+
+ELSE
+
+SET RET_MSG = 'Aggregation Failed - Wrong Parameter Supplied'; 
+
+END CASE;
+
+END;
