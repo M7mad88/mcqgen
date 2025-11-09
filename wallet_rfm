@@ -1,0 +1,376 @@
+SHOW PROCEDURE anproddb.p_cash_recharge_rfm;
+
+REPLACE PROCEDURE anproddb.p_cash_recharge_rfm
+(
+IN "Processing_Date" DATE,
+IN "Options" CHARACTER(4) CHARACTER SET Latin,
+OUT Ret_Msg VARCHAR(100) CHARACTER SET Latin
+
+)
+
+BEGIN
+
+/*      Variable Declaration     */
+DECLARE             Check_Point_No INTEGER DEFAULT 0;
+DECLARE             Start_Time_Stamp TIMESTAMP(6);
+DECLARE             End_Time_Stamp TIMESTAMP(6);
+DECLARE             Counter DECIMAL(13,0) DEFAULT 0;
+DECLARE             Run_ID DECIMAL(13,0) DEFAULT 0;
+DECLARE             Script_Name  VARCHAR(200);
+DECLARE             Aggregate_Domain  VARCHAR(200);
+DECLARE             vQBStmt VARCHAR(256);
+
+
+/*       Handler which will execute when some error will occur in the script execution     */
+DECLARE EXIT HANDLER FOR SqlException
+BEGIN
+
+INSERT INTO ANSTAGEDB.ERROR_LOG
+(
+Error_Time
+, Script_Name
+, Check_Point
+, SQL_Code
+, SQL_State
+)
+VALUES
+(
+Current_Timestamp
+, :Script_Name
+, :Check_Point_No
+, :SqlCode
+, :SqlState
+);    
+END;
+
+
+/*     Setting initial variables     */
+
+SET    Script_Name = 'p_cash_recharge_rfm';
+SET    Aggregate_Domain = 'General';
+SET	   vQBStmt = 'SET QUERY_BAND='''||'Agg_Domain=General;Script_Name=p_cash_recharge_rfm;'||''''||' FOR SESSION '||';';
+/* Set the Query Band */
+CALL    DBC.SYSEXECSQL(vQBStmt);
+
+
+/*     Creating Job Run ID     */
+SEL        
+Cast(Cast((Current_Timestamp (FORMAT 'YYYYMMDDHHMI')) AS CHAR(13)) AS DECIMAL(13, 0))
+INTO
+:Run_ID;
+
+/*      Calculating Aggregate     */
+
+CASE     
+WHEN  Options='CD'
+THEN
+-------------------------------------------=====================---------------------------------------------
+SET Check_Point_No =1;
+SET Start_Time_Stamp = Current_Timestamp;
+
+
+ DELETE FROM  ANSTAGEDB.cash_RFM_base;
+ 
+ INSERT INTO  ANSTAGEDB.cash_RFM_base
+ 
+SEL DISTINCT cdt.SUBSCRIPTION_id
+,Transaction_date
+FROM vdb.Cash_Datamart_Transactions_Daily cdt
+INNER JOIN  vdb.dnom_payment dp ON cdt.subscription_id = dp.subscription_id AND cdt.Transaction_Date=dp.payment_Date
+WHERE Transaction_Date  BETWEEN :Processing_Date -180 AND :Processing_Date-1
+AND Payment_date   BETWEEN (:Processing_Date -180) AND (:Processing_Date -1)
+AND dp.voucher_group LIKE 'mcom%';
+
+COLLECT STATS ON ANSTAGEDB.cash_RFM_base INDEX(Subscription_id); 
+
+  ------------------- End of Check Point -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter = Activity_Count;
+
+INSERT INTO ANSTAGEDB.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+
+
+-------------------------------------------=====================---------------------------------------------
+-------------------------------------------=====================---------------------------------------------
+SET Check_Point_No =2;
+SET Start_Time_Stamp = Current_Timestamp;
+
+DELETE FROM ANSTAGEDB.cash_RFM_gap_days ;
+INSERT INTO ANSTAGEDB.cash_RFM_gap_days
+SEL 
+subscription_id
+,Transaction_date
+, Max(Transaction_date) Over (PARTITION BY  Subscription_ID ORDER BY Transaction_date ASC ROWS 
+BETWEEN 1 Following AND 1 Following) Next_usg_Start_Date
+,(CASE WHEN  Next_usg_Start_Date  IS NOT NULL THEN Next_usg_Start_Date  -Transaction_date-1 
+ELSE :Processing_Date-1  -Transaction_date-1 END )AS gap_days
+FROM  ANSTAGEDB.cash_RFM_base;
+--WHERE Transaction_:Processing_Date BETWEEN :Processing_:Processing_Date -90 AND :Processing_:Processing_Date-1;
+
+
+COLLECT STATS ON ANSTAGEDB.cash_RFM_gap_days INDEX(Subscription_id); 
+
+  ------------------- End of Check Point -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter = Activity_Count;
+
+INSERT INTO ANSTAGEDB.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+
+-------------------------------------------=====================---------------------------------------------
+
+------------------------------------------=====================---------------------------------------------
+-------------------------------------------=====================---------------------------------------------
+SET Check_Point_No =3;
+SET Start_Time_Stamp = Current_Timestamp;
+DELETE FROM ANSTAGEDB.RFM_cash_Gaps_stg;
+INSERT INTO ANSTAGEDB.RFM_cash_Gaps_stg        
+SEL Subscription_ID 
+,Avg(gap_days ) AVG_Gap_Days 
+,StdDev_Pop(gap_days )  STD_Gap_Days 
+,Count(DISTINCT Transaction_date) AS No_of_access_days  
+,Min(Transaction_date ) First_Transaction_Date 
+,Max(Transaction_date ) Last_Transaction_Date 
+,Max(gap_days ) MAX_Gap_Days
+FROM ANSTAGEDB.cash_RFM_gap_days 
+GROUP BY 1;
+COLLECT STATS ON ANSTAGEDB.RFM_cash_Gaps_stg INDEX(Subscription_id); 
+  ------------------- End of Check Point -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter = Activity_Count;
+
+INSERT INTO ANSTAGEDB.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);  
+
+-------------------------------------------=====================---------------------------------------------
+
+------------------------------------------=====================---------------------------------------------  
+SET Check_Point_No =4;
+SET Start_Time_Stamp = Current_Timestamp;
+
+DELETE FROM ANSTAGEDB.RFM_cash_status ;
+INSERT INTO ANSTAGEDB.RFM_cash_status 
+SEL Subscription_ID
+ ,No_of_access_days
+,CASE 
+	WHEN No_of_access_days = 1 THEN 'Once'
+	WHEN No_of_access_days = 2 THEN 'Twice'
+	WHEN  Cast(Last_Transaction_Date AS DATE) = :Processing_Date -1  THEN 'Z'   
+	WHEN :Processing_Date -1   - Cast(Last_Transaction_Date AS DATE) < AVG_Gap_Days -STD_Gap_Days THEN 'S'
+	WHEN :Processing_Date -1   -  Cast(Last_Transaction_Date AS DATE) > AVG_Gap_Days -(0.2*STD_Gap_Days) AND  :Processing_Date  -1   - Cast(Last_Transaction_Date AS DATE) < AVG_Gap_Days  + (0.2*STD_Gap_Days)   THEN 'T'
+    WHEN  :Processing_Date -1   - Cast(Last_Transaction_Date AS DATE)> AVG_Gap_Days -STD_Gap_Days AND :Processing_Date  -1   - Cast(Last_Transaction_Date AS DATE) < AVG_Gap_Days -(0.2*STD_Gap_Days)  THEN 'U'
+	WHEN :Processing_Date -1   - Cast(Last_Transaction_Date AS DATE) > AVG_Gap_Days +(0.2*STD_Gap_Days) AND  :Processing_Date -1   - Cast(Last_Transaction_Date AS DATE) < AVG_Gap_Days+STD_Gap_Days  THEN 'R'
+	WHEN  :Processing_Date -1   - Cast(Last_Transaction_Date AS DATE) > AVG_Gap_Days+STD_Gap_Days  THEN 'W'
+	ELSE 'Else'   
+	ENd RFM_cash_Status 
+  FROM ANSTAGEDB.RFM_cash_Gaps_stg ;
+COLLECT STATS ON ANSTAGEDB.RFM_cash_status INDEX(Subscription_id); 
+
+  
+   ------------------- End of Check Point -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter = Activity_Count;
+
+INSERT INTO ANSTAGEDB.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+
+
+
+-------------------------------------------=====================---------------------------------------------
+
+
+
+
+-------------------------------------------=====================---------------------------------------------
+SET Check_Point_No =5;
+SET Start_Time_Stamp = Current_Timestamp;
+
+DELETE FROM anproddb.Recharge_From_Wallet_RFM WHERE   running_Date= :Processing_Date;
+INSERT INTO anproddb.Recharge_From_Wallet_RFM
+SEL
+stg.Subscription_ID
+,First_Transaction_Date
+,Last_Transaction_Date
+,MAX_Gap_Days
+,stg.No_of_access_days
+,RFM_cash_Status
+,:Processing_Date-1 AS running_date
+FROM  ANSTAGEDB.RFM_cash_Gaps_stg stg
+LEFT JOIN ANSTAGEDB.RFM_cash_status status ON stg.Subscription_ID=status.Subscription_ID;
+
+
+
+COLLECT STATS ON anproddb.Recharge_From_Wallet_RFM INDEX(Subscription_ID); 
+
+
+
+ 
+  ------------------- End of Check Point -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter = Activity_Count;
+
+INSERT INTO anproddb.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);    
+
+--============================================= deleting STAGING============================================
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SET Check_Point_No =6;
+SET Start_Time_Stamp = Current_Timestamp;
+DELETE FROM anproddb.Recharge_From_Wallet_RFM WHERE running_date < :Processing_Date - 180;
+DELETE FROM ANSTAGEDB.cash_RFM_base;
+DELETE FROM ANSTAGEDB.cash_RFM_gap_days;
+DELETE FROM ANSTAGEDB.RFM_cash_Gaps_stg ;
+DELETE FROM ANSTAGEDB.RFM_cash_status
+;
+
+
+------------------- End of Check Point -------------------------- 
+SET End_Time_Stamp = Current_Timestamp;
+SET Counter = Activity_Count;
+
+INSERT INTO ANSTAGEDB.DETAIL_LOG
+(
+Run_ID
+, Agg_Domain
+, Script_Name
+, Start_Time_Stamp
+, End_Time_Stamp
+, Check_Point
+, Records_Processed
+, Exec_Option
+,Para_Date
+)
+VALUES
+(
+:Run_ID
+, :Aggregate_Domain
+, :Script_Name    
+, :Start_Time_Stamp
+, :End_Time_Stamp
+, :Check_Point_No
+, :Counter
+, :Options
+, :Processing_Date
+);   
+
+SET RET_MSG = 'Aggregation Successfully Completed';
+
+ELSE
+
+SET RET_MSG = 'Aggregation Failed - Wrong Parameter Supplied'; 
+
+
+END CASE;
+
+END;
