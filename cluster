@@ -1,0 +1,235 @@
+query ="""WITH base AS(
+        SELECT                                                                                                                                                                                                                                               
+        dsi.Subscription_Id                                                                                                                                                                                                                                               
+        ,temp_days                                                                                                                                                                                                                                               
+        FROM   VDB.DETAILED_SUBSCRIPTION_INFO dsi                                                                                                                                                                                                    
+        INNER JOIN VDB.rate_plan rp ON dsi.Rate_Plan_Product_Id = RP.Rate_Plan_Product_Id                                                                                                                                                                    
+        INNER JOIN                                                                                                                                                                                                                                                 
+        (                                                                                                                                                                                                                                                 
+        SEL SUBSCRIPTION_ID                                                                                                                                                                                                                            
+        ,CAST('{}' AS DATE) - CAST(Transaction_Dttm AS DATE)  - 27  AS temp_days                                                                                                                                   
+        FROM VDB.PREPAID_ADJUSTMENT                                                                                                                                                                                                         
+        WHERE Transaction_Dttm  BETWEEN CAST('{}' AS DATE) - 27 - 5 AND CAST('{}' AS DATE) - 27 + 4                                                                                                                                         
+        AND Adjustment_Reason_Cd IN( 'Connect Revamp','Terra Postpaid Renewal')                                                                                                                                                                      
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY subscription_id ORDER BY Transaction_Dttm DESC) =1                                                                                                                                  
+        ) mi_ren ON mi_ren.SUBSCRIPTION_ID = dsi.SUBSCRIPTION_ID                                                                                                                                                                      
+        WHERE rp.Rate_Plan_Class = 'Corporate'                                                                                                                                                                                                     
+        AND Rate_Plan_Group = 'Business'                                                                                                                                                                                                     
+        AND Subscription_Status_Group_Cd NOT IN('-1','3','4')                                                                                                                                                                  
+        )                                                                                                                                                                                                                                                 
+        SEL                                                                                                                                       
+        bs.subscription_id                                                                                                                                                                                                                                               
+        ,bs.temp_days                                                                                                                                                                                                                                               
+        ,rch.ScratchCard_n_rchg_1M                                                                                         
+        ,rch.ScratchCard_n_rchg_2M                                                                                         
+        ,rch.ScratchCard_n_rchg_3M                                                                                         
+        ,rch.ScratchCard_total_rchg_1M                                                                                                    
+        ,rch.ScratchCard_total_rchg_2M                                                                                                    
+        ,rch.ScratchCard_total_rchg_14days                                                                                                    
+        ,rch.ScratchCard_total_rchg_7days                                                                                         
+        ,rch.ScratchCard_total_rchg_3days                                                                                         
+        ,rch.Telepin_n_rchg_1M                                                                                             
+        ,rch.Telepin_n_rchg_2M                                                                                             
+        ,rch.Telepin_n_rchg_3M                                                                                             
+        ,rch.Telepin_total_rchg_1M                                                                                                    
+        ,rch.Telepin_total_rchg_2M                                                                                                    
+        ,rch.Telepin_total_rchg_3M                                                                                                    
+        ,rch.Telepin_total_rchg_14days                                                                                                    
+        ,rch.Ba2yBlnc_n_rchg_1M                                                                                            
+        ,rch.Ba2yBlnc_n_rchg_2M                                                                                            
+        ,rch.Ba2yBlnc_n_rchg_3M                                                                                            
+        ,rch.Ba2yBlnc_total_rchg_1M                                                                                                    
+        ,rch.Ba2yBlnc_total_rchg_2M                                                                                                    
+        ,rch.Ba2yBlnc_total_rchg_14days                                                                                                    
+        ,rch.total_trx_1M                                                                                                              
+        ,rch.total_trx_2M                                                                                                              
+        ,rch.total_trx_3M                                                                                                              
+        ,rch.total_recharge_1M                                                                                                 
+        ,rch.total_recharge_2M                                                                                                 
+        ,rch.total_recharge_14days                                                                                             
+        ,MB.MI_Days_Since_Max_Renewal_1M                                                                                                    
+        ,MB.MI_Temp_Days_1M                                                                                         
+        ,MB.Total_MI_MB_1M                                                                                                    
+        ,MB.Total_ROR_MB_1M                                                                                         
+        ,MB.Connect_MB_1M                                                                                                    
+        ,MB.Connect_InBundel_MB_1M                                                                         
+        ,MB.Connect_ROR_MB_1M                                                                                            
+        ,MB.Hybrids_MB_1M                                                                                             
+        ,MB.Total_MI_Revenue_1M                                                                                       
+        ,MB.PAYG_MB_1M                                                                                                    
+        ,MB.facebook_MB_1M                                                                                            
+        ,MB.Instagram_MB_1M                                                                                       
+        ,MB.Whatsapp_MB_1M                                                                                       
+        ,MB.Twitter_MB_1M                                                                                  
+        ,MB.Tik_Tok_MB_1M                                                                                       
+        ,MB.Snapchat_MB_1M                                                                                            
+        ,MB.Youtube_MB_1M                                                                                       
+        ,MB.Netflix_MB_1M                                                                                                 
+        ,MB.PUBG_MB_1M                                                                                                    
+        ,MB.Asphalt_MB_1M                                                                                             
+        ,MB.Anghami_MB_1M                                                                                            
+        ,MB.SoundCloud_MB_1M                                                                                         
+        ,MB.Deezer_MB_1M                                                                                             
+        ,MB.Spotify_MB_1M                                                                                  
+        ,MB.MI_Days_Since_Max_Renewal_2M                                                                                                    
+        ,MB.MI_Temp_Days_2M                                                                                         
+        ,MB.Total_MI_MB_2M                                                                                                    
+        ,MB.Total_ROR_MB_2M                                                                                         
+        ,MB.Connect_MB_2M                                                                                                    
+        ,MB.Connect_InBundel_MB_2M                                                                         
+        ,MB.Connect_ROR_MB_2M                                                                                            
+        ,MB.Hybrids_MB_2M                                                                                             
+        ,MB.Total_MI_Revenue_2M                                                                                       
+        ,MB.PAYG_MB_2M                                                                                                    
+                                                                                     
+        ,MB.facebook_MB_2M                                                                                            
+        ,MB.Instagram_MB_2M                                                                                       
+        ,MB.Whatsapp_MB_2M                                                                                       
+        ,MB.Twitter_MB_2M                                                                                  
+        ,MB.Tik_Tok_MB_2M                                                                                       
+        ,MB.Snapchat_MB_2M                                                                                            
+        ,MB.Youtube_MB_2M                                                                                       
+        ,MB.Netflix_MB_2M                                                                                                 
+        ,MB.PUBG_MB_2M                                                                                                    
+        ,MB.Asphalt_MB_2M                                                                                             
+        ,MB.Anghami_MB_2M                                                                                            
+        ,MB.SoundCloud_MB_2M                                                                                         
+        ,MB.Deezer_MB_2M                                                                                             
+        ,MB.Spotify_MB_2M                                                                              
+                                                                                                                                       
+        FROM base AS bs                                                                                                                       
+        LEFT JOIN(                                                                                                                                       
+        SEL                                                                                                                                       
+        base.subscription_id                                                                                                                        
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN MI_Days_Since_Max_Renewal END ) AS MI_Days_Since_Max_Renewal_1M                                      
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN MI_Temp_Days              END ) AS MI_Temp_Days_1M                                                                        
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Total_MI_MB               END ) AS Total_MI_MB_1M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Total_ROR_MB              END ) AS Total_ROR_MB_1M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Connect_MB                END ) AS Connect_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Connect_InBundel_MB       END ) AS Connect_InBundel_MB_1M                                                                  
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Connect_ROR_MB            END ) AS Connect_ROR_MB_1M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Hybrids_MB                END ) AS Hybrids_MB_1M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Total_MI_Revenue          END ) AS Total_MI_Revenue_1M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN PAYG_MB                   END ) AS PAYG_MB_1M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN facebook_MB               END ) AS facebook_MB_1M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Instagram_MB              END ) AS Instagram_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Whatsapp_MB               END ) AS Whatsapp_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Twitter_MB                END ) AS Twitter_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Tik_Tok_MB                END ) AS Tik_Tok_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Snapchat_MB               END ) AS Snapchat_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Youtube_MB                END ) AS Youtube_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Netflix_MB                END ) AS Netflix_MB_1M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN PUBG_MB                   END ) AS PUBG_MB_1M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Asphalt_MB                END ) AS Asphalt_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Anghami_MB                END ) AS Anghami_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN SoundCloud_MB             END ) AS SoundCloud_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Deezer_MB                 END ) AS Deezer_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-30 AND CAST('{}' AS DATE) THEN Spotify_MB                END ) AS Spotify_MB_1M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN MI_Days_Since_Max_Renewal END ) AS MI_Days_Since_Max_Renewal_2M                                      
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN MI_Temp_Days              END ) AS MI_Temp_Days_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Total_MI_MB               END ) AS Total_MI_MB_2M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Total_ROR_MB              END ) AS Total_ROR_MB_2M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Connect_MB                END ) AS Connect_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Connect_InBundel_MB       END ) AS Connect_InBundel_MB_2M                                                                  
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Connect_ROR_MB            END ) AS Connect_ROR_MB_2M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Hybrids_MB                END ) AS Hybrids_MB_2M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Total_MI_Revenue          END ) AS Total_MI_Revenue_2M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN PAYG_MB                   END ) AS PAYG_MB_2M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN facebook_MB               END ) AS facebook_MB_2M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Instagram_MB              END ) AS Instagram_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Whatsapp_MB               END ) AS Whatsapp_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Twitter_MB                END ) AS Twitter_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Tik_Tok_MB                END ) AS Tik_Tok_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Snapchat_MB               END ) AS Snapchat_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Youtube_MB                END ) AS Youtube_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Netflix_MB                END ) AS Netflix_MB_2M                                                                    
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN PUBG_MB                   END ) AS PUBG_MB_2M                         
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Asphalt_MB                END ) AS Asphalt_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Anghami_MB                END ) AS Anghami_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN SoundCloud_MB             END ) AS SoundCloud_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Deezer_MB                 END ) AS Deezer_MB_2M                                                                
+        ,SUM(CASE WHEN RUNNING_DATE BETWEEN CAST('{}' AS DATE)-60 AND CAST('{}' AS DATE) -30 THEN Spotify_MB                END ) AS Spotify_MB_2M                                                                
+        FROM base AS  base                                                                                                                         
+        LEFT JOIN vdb.cvm_mi_Daily  mi ON mi.subscription_id = base.subscription_id                                                                                                                   
+        AND running_date BETWEEN CAST('{}' AS DATE) - 60 AND CAST('{}' AS DATE)                                                                    
+        GROUP BY 1                                                                                                                                                                                                                                              
+        ) MB ON MB.subscription_id = bs.subscription_id                                                                                                                                           
+        LEFT JOIN(                                                                                                                                       
+        SEL                                                                                                                                           
+        subscription_id                                                                                                                              
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN n_recharges_1M END)) AS ScratchCard_n_rchg_1M                                                                        
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN n_recharges_2M END)) AS ScratchCard_n_rchg_2M                                                                        
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN n_recharges_3M END)) AS ScratchCard_n_rchg_3M                                                                        
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN total_recharge_1M END)) AS ScratchCard_total_rchg_1M                                                                    
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN total_recharge_2M END)) AS ScratchCard_total_rchg_2M                                                                    
+                                                                                                                                           
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN total_recharge_14days END)) AS ScratchCard_total_rchg_14days                                                                    
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN total_recharge_7days END))  AS ScratchCard_total_rchg_7days                                                                 
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'ScratchCard' THEN total_recharge_3days END))  AS ScratchCard_total_rchg_3days                                                                 
+                                                                                                                                           
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN n_recharges_1M END)) AS    Telepin_n_rchg_1M                                                                        
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN n_recharges_2M END)) AS    Telepin_n_rchg_2M                                                                        
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN n_recharges_3M END)) AS    Telepin_n_rchg_3M                                                                        
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN total_recharge_1M END)) AS Telepin_total_rchg_1M                                                                    
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN total_recharge_2M END)) AS Telepin_total_rchg_2M                                                                    
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN total_recharge_3M END)) AS Telepin_total_rchg_3M                                                                    
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Telepin' THEN total_recharge_14days END)) AS Telepin_total_rchg_14days                                                                    
+                                                                                                                                           
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Ba2yBalance' OR (Refill_Type =  'Telepin' AND Payment_Transaction_Amt IN (0.5000, 1.0000, 1.5000)) THEN n_recharges_1M END)) AS   Ba2yBlnc_n_rchg_1M  
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Ba2yBalance' OR (Refill_Type =  'Telepin' AND Payment_Transaction_Amt IN (0.5000, 1.0000, 1.5000)) THEN n_recharges_2M END)) AS   Ba2yBlnc_n_rchg_2M  
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Ba2yBalance' OR (Refill_Type =  'Telepin' AND Payment_Transaction_Amt IN (0.5000, 1.0000, 1.5000)) THEN n_recharges_3M END)) AS   Ba2yBlnc_n_rchg_3M  
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Ba2yBalance' OR (Refill_Type =  'Telepin' AND Payment_Transaction_Amt IN (0.5000, 1.0000, 1.5000)) THEN total_recharge_1M END)) AS  Ba2yBlnc_total_rchg_1M  
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Ba2yBalance' OR (Refill_Type =  'Telepin' AND Payment_Transaction_Amt IN (0.5000, 1.0000, 1.5000)) THEN total_recharge_2M END)) AS  Ba2yBlnc_total_rchg_2M  
+        ,MAX(ZEROIFNULL(CASE WHEN Refill_Type = 'Ba2yBalance' OR (Refill_Type =  'Telepin' AND Payment_Transaction_Amt IN (0.5000, 1.0000, 1.5000)) THEN total_recharge_14days END)) AS  Ba2yBlnc_total_rchg_14days  
+                                                                                                                                           
+        ,ScratchCard_n_rchg_1M + Telepin_n_rchg_1M + Ba2yBlnc_n_rchg_1M AS total_trx_1M                                                                                                                       
+        ,ScratchCard_n_rchg_2M + Telepin_n_rchg_2M + Ba2yBlnc_n_rchg_2M AS total_trx_2M                                                                                                                       
+        ,ScratchCard_n_rchg_3M + Telepin_n_rchg_3M + Ba2yBlnc_n_rchg_3M AS total_trx_3M                                                                                                                       
+        ,ScratchCard_total_rchg_1M + Telepin_total_rchg_1M + Ba2yBlnc_total_rchg_1M AS total_recharge_1M                                                                                            
+        ,ScratchCard_total_rchg_2M + Telepin_total_rchg_2M + Ba2yBlnc_total_rchg_2M AS total_recharge_2M                                                                                            
+                                                                                                                                           
+        ,ScratchCard_total_rchg_14days + Telepin_total_rchg_14days + Ba2yBlnc_total_rchg_14days AS total_recharge_14days                                                                        
+        FROM (                                                                                                                                       
+            SEL                                                                                                                                       
+            bb.subscription_id                                                                                                                         
+            ,CASE WHEN a.Refill_Type_Cd IN ('1') THEN 'ScratchCard'                                                                                   
+            WHEN a.Refill_Type_Cd  IN ('2') THEN 'Telepin'                                                                                            
+            WHEN a.Refill_Type_Cd  IN ('9','11','12') THEN 'Ba2yBalance'                                                                              
+            END AS Refill_Type                                                                                                                        
+            ,Payment_Transaction_Amt                                                                                                                  
+            ,CAST(SUM(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 30 AND  CAST('{}' AS DATE) - 1 THEN  CAST( a.Payment_Transaction_Amt AS DECIMAL(18,5) )+ CAST(a.Admin_Fees AS DECIMAL(18,5))+ CAST(a.Taxes_Fees AS DECIMAL(18,5)) ELSE 0 end)AS DECIMAL(18,5)    ) AS total_recharge_1M            
+            ,CAST(SUM(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 60 AND  CAST('{}' AS DATE) - 1 THEN CAST( a.Payment_Transaction_Amt AS DECIMAL(18,5) )+ CAST(a.Admin_Fees AS DECIMAL(18,5))+ CAST(a.Taxes_Fees AS DECIMAL(18,5))ELSE 0 end)AS DECIMAL(18,5)   ) AS total_recharge_2M            
+            ,CAST(SUM( CAST( a.Payment_Transaction_Amt AS DECIMAL(18,5) )+ CAST(a.Admin_Fees AS DECIMAL(18,5))+ CAST(a.Taxes_Fees AS DECIMAL(18,5)))AS DECIMAL(18,5)) AS total_recharge_3M                                                                    
+                                                                                                                                           
+            ,CAST(SUM(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 14 AND  CAST('{}' AS DATE) - 1 THEN  CAST( a.Payment_Transaction_Amt AS DECIMAL(18,5) )+ CAST(a.Admin_Fees AS DECIMAL(18,5))+ CAST(a.Taxes_Fees AS DECIMAL(18,5))ELSE 0 end)AS DECIMAL(18,5)) AS total_recharge_14days        
+            ,CAST(SUM(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 7 AND  CAST('{}' AS DATE) - 1 THEN  CAST( a.Payment_Transaction_Amt AS DECIMAL(18,5) )+ CAST(a.Admin_Fees AS DECIMAL(18,5))+ CAST(a.Taxes_Fees AS DECIMAL(18,5))ELSE 0 end)AS DECIMAL(18,5)) AS total_recharge_7days        
+            ,CAST(SUM(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 3 AND  CAST('{}' AS DATE) - 1 THEN  CAST( a.Payment_Transaction_Amt AS DECIMAL(18,5) )+ CAST(a.Admin_Fees AS DECIMAL(18,5))+ CAST(a.Taxes_Fees AS DECIMAL(18,5))ELSE 0 end)AS DECIMAL(18,5)) AS total_recharge_3days        
+                                                                                                                                           
+            ,COUNT(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 30 AND  CAST('{}' AS DATE) - 1 THEN a.subscription_id ELSE NULL end) AS   n_recharges_1M           
+            ,COUNT(CASE WHEN payment_date BETWEEN  CAST('{}' AS DATE) - 60 AND  CAST('{}' AS DATE) - 1 THEN a.subscription_id ELSE NULL end) AS n_recharges_2M           
+            ,COUNT(a.subscription_id ) AS n_recharges_3M           
+                                                                                                                                           
+            FROM base bb                                                                                                                                  
+            INNER JOIN vdb.DNOM_Payment a ON a.subscription_id=bb.subscription_id                                                                          
+            WHERE a.Payment_Date BETWEEN CAST('{}' AS DATE) - 90 AND CAST('{}' AS DATE) - 1                                                                
+            AND refill_type_cd IN ('1','2','9','11','12')                                                                                        
+            GROUP BY 1,2,3                                                                                                                                
+        )a                                                                                                                                           
+        GROUP BY 1                                                                                                                                  
+        ) rch ON rch.subscription_id = bs.subscription_id                                                                                            
+                                                                                                                                   
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77
+        """.format(period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id, period_id,
+                   period_id, period_id, period_id, period_id, period_id, period_id, period_id)
+   
+    return query
