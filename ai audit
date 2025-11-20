@@ -1,0 +1,141 @@
+Dears,
+
+Hope you are doing,
+
+Kindly find below the minutes of our meeting held on Tuesday, in light of the above subject. Appreciate your support in providing us with the Initial Requirements by Wednesday 26th of November, 2025 COB. Should you have any further clarifications or additions to the points below, feel free to reach out to our team. 
+
+Date: 11/18/2025
+
+Attendees:
+Mohamed Bennawy
+Ahmed Ali Abbas
+Mostafa Kenawi
+Mohamed Hafez Ramadan
+Hassan Ibrahim
+Ahmed Elsamanty
+Ahmed Sadek Bakar
+Hadeer Aboelfath
+Amira Abdelsayed
+Nada Mamdouh 
+Sameh ElMalt
+Ahmed Ashraf AbdelGhany
+Yara ElHanafy
+
+Meeting Minutes:
+Process and Procedures:
+•	There is a documented process for AI that is currently in the approval cycle and was the result of an initiative by IT Governance through a Kick-off meeting with the Enterprise Security (Based on ISO 42000).
+
+Mainly the AI team delivers three types of projects (Their scope of work):
+•	Advanced Analytics:
+- Building up on the current data layer as they have a Database (Teradata) that contains all transaction.
+-Through transforming the current transactions from its raw form into an advanced analytics data layer.
+-To develop outputs such as the customers’ interests.
+-Can be utilized for many purposes.
+-Has a standalone KPI and is included in the Dashboards.
+-integrates in the campaign layers.
+
+•	Prediction:
+-Used in predicting many customers’ activities such as recharge, shopping and inactivity.
+-Also used in campaigns and offers as it provides more feasibility and avoids wasted efforts in giving offers to non-eligible customers.
+
+•	AI:
+-Extracting certain types of information (such as National ID no.) from inputs.
+-Generating outputs from raw data.
+-Include fields as NLP (Natural Language Processing) and Computer vision.
+
+Copilot Tool:
+•	Part of the agreement with Teams and is a closed solution from Microsoft.
+•	Not related to the AI Team.
+
+Communications with the Group:
+There were 2 communications:
+•	A communication regarding an engagement with Gartner to assess the maturity of AI in Eand through a questionnaire.
+•	A communication with Eand Emirates through which they exchanged challenges and recommendations.
+The AI team may also present major use cases to the Group in forums.
+
+Use Cases:
+•	There are 2 types of Use Cases (Rule-based & Chat GPT-Like), However all the use cases in production are rule-based only.
+•	They are projects injected in the business to facilitate the operations
+•	The use cases are monitored in terms of performance.
+•	There are dashboards for the use cases insights.
+•	Majority of the uses cases are internal (support Eand’s operation/business teams)
+
+The AI team provide use cases upon the business demand, as follows:
+•	The business requests a use case from the AI team.
+•	The AI team determines the project type whether advances analytics or machine learning use case, etc..
+•	The AI team then determines the relevant data needed for the use case.
+•	The needed data could be available in DWH and if not the team requesting the use case should provide the data.
+•	Then the AI team follows some development steps as: understanding the data source – exploring the data – transforming/cleansing the data.
+
+Database:
+•	Teradata same as DWH.
+•	Has mainly the DWH data.
+•	Current version 17.20, was last updated in December 2024.
+•	Stores the analysis data performed by the AI.
+•	Based on Operating System: Linux type SUSE, version SLES 12 (out of SA team scope of administration) also managed by the Database team.
+
+Application:
+•	There is no Application.
+
+Machine:
+•	Dedicated to analysis projects.
+•	There is a GUI which is a script that executes some commands and then stores all data in Teradata.
+•	The machine type in Linux
+
+Integrations:
+•	From AI team POV, there is no integration as the team depends on data already available in the database and the outputs then are stored in specific fields.
+
+Access Management:
+•	Depends on the type of project whether analytics through the Database or Machine learning through development machine (Python).
+•	Database: 
+-The Database user is considered the access.
+-Each AI team member has a database user with their NT account.
+-Through the database user, they create scripts (mostly sequel) which is then used to create the change requests.
+-Request management for DB & OS: the database creates the access requests. 
+•	Development Machine:
+-AI team also have users in the machine
+•	Linux Machine:
+-There is only one user on the machine that creates the scripts and executes them and then stores the data in Teradata.
+
+Project Management Process:
+•	Included in the process.
+•	Differs depending on the size of the project and they classify the projects in the initiation phase.
+•	If a major project, it follows the Project management project.
+•	If a minor project, the flow is directly to the AI team and deployed quickly.
+
+Change Management Process:
+•	The AI Team follows the same IT Change management process.
+
+Incident Management Process:
+•	Incidents are managed through 2 ways.
+1-The team identifies the failed cases through the dashboard and send them to the IT Support to be handled right away.
+2-Individual cases from the Business are handled through E-mails.
+
+Capacity Management:
+•	Part is handled by the Database team and another is handled by the IT Capacity Management.
+
+Backup:
+•	Is handled by the Database team.
+
+AI Team:
+•	Around 20-25 team members.
+
+Initial Requirements:
+•	The Process and procedures
+•	Documented Workflows and framework
+•	List of all use cases and projects in production
+•	Sample of business cases for running use cases
+•	Sample from the dashboard (October 2025)
+•	Screenshot of the Teradata version
+•	Screenshot of the type and version of Teradata operating system 
+•	IP addresses and hostnames of all servers and databases
+•	Screenshot of the type and version of the machine
+•	Integration between AI system and Teradata DB (used tables to get data and to store output data)
+•	Change requests service name
+•	Sample from the change requests
+•	Sample from the incident management Emails 
+•	Sample from the communication between the Team and IT support to solve failed cases (incident management)
+•	Sample of communication between AI team and another team requesting a use case
+•	Business case/Case study for new requested hardware to obtain GPU for running AI
+
+Best regards,
