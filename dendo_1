@@ -1,0 +1,22 @@
+Good day to you,
+Thank you for your feedback and for highlighting the areas that need further clarification. Below are the requested details:
+1.	Example Data Mart Models for Insights:
+•	Subscriber Data Mart:
+Model: Subscriber profiles, churn indicators, engagement metrics, recharges, revenue, and renewals, etc.
+•	Marketing Data Mart:
+Model: Digital Interactions, Campaign illegibility and opt-ins, etc.
+•	Network/Usage Data Mart:
+Model: Usage patterns, device segmentation, etc.
+Integration Logic:
+Join on subscriber ID across marts (mostly) → derive features like engagement score, usage drop, and campaign response → correlate churn prediction models.
+2.	Key Business Questions & Expected Insights
+Here are examples of questions and insights we aim to generate:
+Business Question	Expected Insight
+Which subscriber segments have the highest churn risk in the next quarter?	Predictive churn scores by segment with top contributing factors.
+How does marketing spend correlate with customer retention?	Correlation analysis showing ROI of campaigns on churn reduction.
+What are the top reasons for churn in high-value subscribers?	AI-driven root cause analysis (e.g., service quality, pricing, engagement).
+Which regions show anomalies in CVM performance?	Automated anomaly detection highlighting regions with unexpected trends.
+What is the impact of usage patterns on upsell opportunities?	Insights linking high data usage to potential premium plan adoption.
+
+
+Hopefully that would support, and regarding On-prem LLM sizing, we appreciate your effort and look forward to your update.
