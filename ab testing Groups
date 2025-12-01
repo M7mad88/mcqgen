@@ -1,0 +1,133 @@
+/*
+Criteria
+
+Overall ACCESS Days
+Total ARPU	
+• NO MI Bundle renewals IN the LAST 60 Days 
+• Smartphone USER 
+• RCH_INACTIVITY = R OR W
+• MB usage IN the LAST 8 TO 15 Days = 0 
+• custProfCIM_MOUS_30 greater than 0
+
+*/
+
+Overall ACCESS Days
+Total ARPU	• NO MI Bundle renewals IN the LAST 60 Days 
+• Smartphone USER 
+• RCH_INACTIVITY = R OR W
+• MB usage IN the LAST 8 TO 15 Days = 0 
+• custProfCIM_MOUS_30 greater than 0
+
+
+CREATE MULTISET TABLE twm_result.rome_mi_early_targeting_before_bk AS (
+SEL 
+cim.subscription_id
+,ckm.Access_days_30    
+,ZeroIfNull(total_mi_mb) AS total_mi_mb
+FROM vdb.cvm_info_model cim
+INNER JOIN vdb.cvm_mi_model cmm ON cim.subscription_id=cmm.Subscription_Id
+INNER JOIN vdb.CVM_KPI_Model ckm ON ckm.subscription_id=cim.Subscription_Id
+LEFT JOIN 
+(
+SELECT 
+subscription_id
+,Sum(usg.mi_mb) AS total_MI_MB
+FROM vdb.cvm_usg_daily usg
+WHERE Call_Start_Date BETWEEN DATE-15 AND DATE-8
+GROUP BY 1
+)  USAGE ON CIM.SUBSCRIPTION_ID =USAGE.subscription_id
+
+WHERE cim.Running_DATE= DATE -1
+AND RFM_Rchg_Status IN ('R','W')
+AND cmm.MI_Bundle_60_Flag ='N'
+AND cmm.Enabled_Phone_Flag='Y'
+AND ckm.MOUS_30 > 0  
+AND usage.total_mi_mb =0
+GROUP BY 1,2,3
+
+)
+WITH DATA PRIMARY INDEX(subscription_id);
+
+-------------------------------============================================------------------------------------
+DROP TABLE twm_result.rome_mi_early_targeting_after_bk
+
+CREATE MULTISET TABLE twm_result.rome_mi_early_targeting_after_bk AS (
+
+SEL
+bs.Subscription_Id  
+,Access_days_30  
+,'const' AS const
+,Sum(CASE WHEN asrd.Revenue_Date BETWEEN DATE -90 AND DATE -61 THEN asrd.Total_Revenue ELSE 0 end) AS M3_Total_Rev
+,Sum(CASE WHEN asrd.Revenue_Date BETWEEN DATE -60 AND DATE -31 THEN asrd.Total_Revenue ELSE 0 end) AS M2_Total_Rev
+,Sum(CASE WHEN asrd.Revenue_Date BETWEEN DATE -30 AND DATE -1 THEN asrd.Total_Revenue ELSE 0 end) AS  M1_Total_Rev      
+
+,CASE WHEN AB.Subscription_Id IS NULL  AND MCG.UCG_Flag = 0  THEN 1 ELSE 0 end AS should_be_selected
+
+
+FROM twm_result.rome_mi_early_targeting_before_bk bs
+LEFT JOIN VDB.Agg_Subs_Revenue_Daily asrd ON asrd.subscription_id = bs.subscription_id AND asrd.Revenue_Date BETWEEN DATE -90 AND DATE -1
+LEFT JOIN VDB.AB_Testing_CG_TG AS AB ON AB.Subscription_Id = bs.Subscription_Id
+LEFT JOIN VDB.Master_Control_Group AS MCG ON MCG.Subscription_Id = bs.Subscription_Id
+GROUP BY 1,2,3,7
+)
+WITH DATA PRIMARY INDEX(subscription_id);
+---=========================================================================================================================================================
+
+SEL
+'Before_Exclude' AS "B/A"
+,Count(subscription_id) AS Num_of_Subs
+,Sum(M1_Total_Rev) AS M1_Total_Rev
+,Sum(M2_Total_Rev) AS M2_Total_Rev
+,Sum(M3_Total_Rev) AS M3_Total_Rev
+
+FROM twm_result.rome_mi_early_targeting_after_bk
+
+UNION ALL   
+
+SEL
+'After_Exclude' AS "B/A"
+,Count(subscription_id) AS Num_of_Subs
+,Sum(M1_Total_Rev) AS M1_Total_Rev
+,Sum(M2_Total_Rev) AS M2_Total_Rev
+,Sum(M3_Total_Rev) AS M3_Total_Rev
+
+FROM twm_result.rome_mi_early_targeting_after_bk
+WHERE should_be_selected = 1
+---========================================================================================================================================================
+
+SEL * FROM twm_result.MI_Early_Targeting_pre_validation_table;
+SEL * FROM twm_result.MI_Early_Targeting_post_validation_table;
+ twm_result.MI_Early_Targeting;
+
+---==========================================================================================================================================================
+
+INSERT INTO twm_result.AB_Testing_CG_TG_metadata_upload_bk (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+---=================================================================================================================================================
+
+--//Control Group
+INSERT INTO Twm_result.AB_groups_termination
+SEL 11062 AS group_id
+,Current_Date AS termination_date;
+
+INSERT INTO twm_Result.AB_Testing_Upload 
+SEL ab.Subscription_ID
+,11062 Tst_ControlGroup_ID
+,0 Tst_TargetGroup_ID
+,Current_Timestamp Entry_Time
+FROM twm_result.MI_Early_Targeting ab
+WHERE Group_Name = 0;
+
+
+---//Target Group
+INSERT INTO Twm_result.AB_groups_termination
+SEL 11063 AS group_id
+,Current_Date AS termination_date;
+
+INSERT INTO twm_Result.AB_Testing_Upload 
+SEL ab.Subscription_ID
+,0 Tst_ControlGroup_ID
+,11063 Tst_TargetGroup_ID
+,Current_Timestamp Entry_Time
+FROM twm_result.MI_Early_Targeting ab
+WHERE Group_Name = 1;
