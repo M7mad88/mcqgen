@@ -1,0 +1,66 @@
+
+import sys
+from datetime import datetime, timedelta
+import logging
+import trino
+
+# Configure Logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s - %(message)s",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+
+def main():
+    try:
+        # Initialize Spark Session
+        conn = trino.dbapi.connect(
+            host='10.208.244.104',
+            http_scheme="https",
+            verify=False,
+            port=8082,
+            user='mostafa.akkamel',
+            auth=trino.auth.BasicAuthentication("mostafa.akkamel","Sasa&Tefa@2027"),
+            roles={"system": "ROLE{generic_role}"})
+
+        logger.info("OIM short term Input Query")
+
+        logger.info("Execution Transfering to Staging....\n")
+
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            delete from teradata_direct.DLSTAGEDB.oim_short_term
+            """
+        )
+
+        cur.execute(
+            """
+            insert into teradata_direct.DLSTAGEDB.oim_short_term 
+            select
+            Subscription_Id 
+            , app_name
+            , app_category 
+            , CAST(NULLIF(TRIM(total_mbs),'') as DECIMAL(12,2)) as total_mbs
+            , total_sessions
+            , access_days
+            , type 
+            , cast(day as date format 'YYYY--MM--DD') AS day
+            , cast(dt as date format 'YYYY--MM--DD') AS dt
+            from hive.analytics_prod.oim_short_term_raw 
+            """
+        )
+
+        logger.info("Staging Migration completed successfully.\n")
+
+
+    except Exception as e:
+        logger.error("Job failed: {}.\n".format(str(e)))
+        raise
+        
+
+if __name__ == "__main__":
+    main()
