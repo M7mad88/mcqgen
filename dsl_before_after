@@ -1,0 +1,153 @@
+DROP TABLE twm_result.DSL_Addon_AB_Before_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_Addon_AB_Before_MHR AS
+(
+    SELECT
+        b.subscription_id
+
+        -- raw KPIs you may need later in AFTER
+        ,k.arpu_60                       AS arpu_60
+        ,k.usage_gb_60                   AS usage_gb_60
+        ,b.rate_plan_code                AS rate_plan
+        ,b.sub_status                    AS status
+        ,b.tenure_days                   AS tenure_days
+        ,k.outgoing_activity_flag        AS outgoing_activity_flag
+        ,k.digital_engagement_score      AS digital_engagement
+        ,b.dsl_over_fixed_flag
+        ,b.dsl_over_emerald_flag
+
+    FROM vdb.dsl_base b
+    JOIN vdb.dsl_kpi_model k
+      ON b.subscription_id = k.subscription_id
+     AND k.running_date = DATE - 1
+
+    /* 1) FULL UTILIZERS DURING PAST 2 MONTHS */
+    JOIN
+    (
+        SELECT
+            u.subscription_id
+        FROM vdb.dsl_usage_daily u
+        JOIN vdb.dsl_quota q
+          ON u.subscription_id = q.subscription_id
+        WHERE u.usage_date BETWEEN ADD_MONTHS(DATE, -2) AND DATE - 1
+        GROUP BY 1
+        HAVING SUM(u.used_gb) >= 0.9 * SUM(q.quota_gb)   -- 90% = "full utilizer"
+    ) fu
+      ON b.subscription_id = fu.subscription_id
+
+    /* 2) NOT PURCHASING ANY ADD-ONS DURING PAST 2 MONTHS */
+    LEFT JOIN
+    (
+        SELECT
+            subscription_id
+        FROM vdb.dsl_addon_purchases a
+        WHERE a.purchase_date BETWEEN ADD_MONTHS(DATE, -2) AND DATE - 1
+        GROUP BY 1
+    ) ad
+      ON b.subscription_id = ad.subscription_id
+
+    WHERE
+        ad.subscription_id IS NULL        -- no add-ons in last 2 months
+        AND b.product_family = 'DSL'      -- DSL only (adjust)
+        AND b.sub_status = 'ACTIVE'       -- active only (adjust)
+)
+WITH DATA
+PRIMARY INDEX (subscription_id);
+
+
+--=============
+
+DROP TABLE twm_result.DSL_Addon_AB_After_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_Addon_AB_After_MHR AS
+(
+    SELECT
+        bs.subscription_id
+
+        /* =====================
+           Stratification columns
+           ===================== */
+
+        -- ARPU band
+        ,CASE
+            WHEN bs.arpu_60 < 100 THEN 'ARPU_0_100'
+            WHEN bs.arpu_60 < 200 THEN 'ARPU_100_200'
+            WHEN bs.arpu_60 < 300 THEN 'ARPU_200_300'
+            ELSE 'ARPU_300_PLUS'
+         END AS arpu_band
+
+        -- Usage band
+        ,CASE
+            WHEN bs.usage_gb_60 < 50 THEN 'USG_0_50'
+            WHEN bs.usage_gb_60 < 100 THEN 'USG_50_100'
+            ELSE 'USG_100_PLUS'
+         END AS usage_band
+
+        ,bs.outgoing_activity_flag
+        ,bs.rate_plan
+        ,bs.status
+
+        ,CASE
+            WHEN bs.tenure_days < 180 THEN 'TEN_SHORT'
+            WHEN bs.tenure_days < 365 THEN 'TEN_MED'
+            ELSE 'TEN_LONG'
+         END AS tenure_band
+
+        ,CASE
+            WHEN bs.digital_engagement >= 1 THEN 'DIGITAL'
+            ELSE 'NON_DIGITAL'
+         END AS digital_segment
+
+        ,bs.dsl_over_fixed_flag
+        ,bs.dsl_over_emerald_flag
+
+        ,'const' AS const                            -- for main.py if needed
+
+        /* ==============
+           Revenue windows
+           ============== */
+        ,SUM(CASE WHEN asrd.revenue_date BETWEEN DATE - 90 AND DATE - 61
+                  THEN asrd.total_revenue ELSE 0 END) AS M3_Total_Rev
+        ,SUM(CASE WHEN asrd.revenue_date BETWEEN DATE - 60 AND DATE - 31
+                  THEN asrd.total_revenue ELSE 0 END) AS M2_Total_Rev
+        ,SUM(CASE WHEN asrd.revenue_date BETWEEN DATE - 30 AND DATE - 1
+                  THEN asrd.total_revenue ELSE 0 END) AS M1_Total_Rev
+
+        /* ============
+           Exclusions
+           ============ */
+        ,CASE
+             WHEN ab.subscription_id IS NULL
+              AND (mcg.ucg_flag = 0 OR mcg.subscription_id IS NULL)
+             THEN 1
+             ELSE 0
+         END AS should_be_selected
+
+    FROM twm_result.DSL_Addon_AB_Before_MHR bs
+    LEFT JOIN vdb.agg_subs_revenue_daily asrd
+      ON asrd.subscription_id = bs.subscription_id
+     AND asrd.revenue_date BETWEEN DATE - 90 AND DATE - 1
+
+    LEFT JOIN vdb.ab_testing_cg_tg ab
+      ON ab.subscription_id = bs.subscription_id
+
+    LEFT JOIN vdb.master_control_group mcg
+      ON mcg.subscription_id = bs.subscription_id
+
+    GROUP BY
+        bs.subscription_id
+        ,arpu_band
+        ,usage_band
+        ,bs.outgoing_activity_flag
+        ,bs.rate_plan
+        ,bs.status
+        ,tenure_band
+        ,digital_segment
+        ,bs.dsl_over_fixed_flag
+        ,bs.dsl_over_emerald_flag
+        ,const
+        ,should_be_selected
+)
+WITH DATA
+PRIMARY INDEX (subscription_id);
+
