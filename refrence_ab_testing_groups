@@ -1,0 +1,116 @@
+DROP TABLE twm_result.Rome_MI_Ahlan_Before_SA;
+CREATE MULTISET TABLE twm_result.Rome_MI_Ahlan_Before_SA AS(
+SEL
+bs.subscription_id 
+,MI_MB_30
+,CASE
+WHEN  MI_MB_Daily BETWEEN 0 AND 20 THEN  '0--20'
+WHEN  MI_MB_Daily BETWEEN 20.01 AND 40 THEN '21--40'
+WHEN  MI_MB_Daily BETWEEN 40.01 AND 60 THEN '41--60'
+WHEN  MI_MB_Daily BETWEEN 60.01 AND 80 THEN '61--80'
+WHEN  MI_MB_Daily BETWEEN 80.01 AND 102 THEN '81--102'
+ELSE '102++'
+end AS MB_tiers
+,CASE WHEN Tesla_Amt_30>0 THEN 'Y'ELSE 'N' end AS TESLA_30_FLAG 
+FROM vdb.cvm_info_model  bs
+LEFT JOIN (
+SEL
+CUD.Subscription_Id
+,Sum(CASE WHEN CUD.Call_Start_Date = DATE - 1 THEN CUD.MI_MB ELSE 0 end) AS MI_MB_Daily
+,Sum(CUD.MI_MB ) AS MI_MB_30
+FROM VDB.cvm_usg_daily AS CUD
+WHERE 1 = 1
+AND CUD.Call_Start_Date BETWEEN DATE - 30 AND DATE - 1
+GROUP BY 1
+) AS CUD ON CUD.Subscription_Id = bs.Subscription_Id
+LEFT JOIN (
+SEL
+CRD.subscription_id 
+,Sum (CRD.Tesla_recharge_Amt ) AS Tesla_Amt_30
+FROM VDB.CVM_Recharge_Daily AS CRD  
+WHERE 1 = 1
+AND CRD.Payment_Date BETWEEN DATE-30 AND DATE-1
+GROUP BY 1
+)AS CRD ON CRD.subscription_id = bs.Subscription_Id
+LEFT JOIN VDB.cvm_mi_model AS CMM ON CMM.subscription_id = bs.Subscription_Id
+WHERE 1 = 1
+AND bs.Rate_Plan_Group = 'Ahlan'
+AND MI_MB_30 >100
+AND Connect_60_Flag ='N'  
+AND Running_DATE = DATE -1
+GROUP BY 1,2,3,4
+)WITH DATA PRIMARY INDEX(subscription_id);
+
+
+--====================================================================================================================
+
+DROP TABLE  twm_result.Rome_MI_Ahlan_After_SA;
+CREATE MULTISET TABLE  twm_result.Rome_MI_Ahlan_After_SA AS (
+SEL 
+bs.subscription_id
+,TESLA_30_FLAG
+,MB_tiers
+
+,Sum(CASE WHEN asrd.Revenue_Date BETWEEN DATE - 90 AND DATE - 61  THEN asrd.Total_Revenue ELSE 0 end) AS M3_Total_Rev
+,Sum(CASE WHEN asrd.Revenue_Date BETWEEN DATE - 60 AND DATE - 31  THEN asrd.Total_Revenue ELSE 0 end) AS M2_Total_Rev
+,Sum(CASE WHEN asrd.Revenue_Date BETWEEN DATE - 30 AND DATE - 1   THEN asrd.Total_Revenue ELSE 0 end) AS M1_Total_Rev
+,CASE WHEN AB.Subscription_Id IS NULL AND (MCG.UCG_Flag) = 0 AND MA.Subscription_Id IS NULL THEN 1 ELSE 0 end AS should_be_selected
+
+FROM twm_result.Rome_MI_Ahlan_Before_SA bs
+LEFT JOIN VDB.AB_Testing_CG_TG ab ON ab.Subscription_ID = bs.Subscription_ID
+LEFT JOIN VDB.Master_Control_Group mcg ON mcg.Subscription_Id = bs.Subscription_Id
+LEFT JOIN VDB.Agg_Subs_Revenue_Daily asrd ON asrd.subscription_id = bs.subscription_id AND asrd.Revenue_Date BETWEEN DATE - 90 AND DATE - 1 
+LEFT JOIN twm_result.MA_Summer_Promo_Stiletto_groups_ MA ON MA.Subscription_ID = bs.Subscription_ID
+GROUP BY 1,2,3,7
+)WITH DATA PRIMARY INDEX(subscription_id);
+
+--====================================================================================================================
+SEL
+ 'Before_Exclude' AS "B/A"
+,Count(subscription_id) AS Num_of_Subs
+,Sum(M1_Total_Rev) AS M1_Total_Rev
+,Sum(M2_Total_Rev) AS M2_Total_Rev
+,Sum(M3_Total_Rev) AS M3_Total_Rev
+FROM twm_Result.Rome_MI_Ahlan_After_SA
+UNION ALL   
+SEL
+'After_Exclude' AS "B/A"
+,Count(subscription_id) AS Num_of_Subs
+,Sum(M1_Total_Rev) AS M1_Total_Rev
+,Sum(M2_Total_Rev) AS M2_Total_Rev
+,Sum(M3_Total_Rev) AS M3_Total_Rev
+FROM twm_Result.Rome_MI_Ahlan_After_SA
+WHERE should_be_selected = 1
+--====================================================================================================================
+
+SEL * FROM twm_result.Rome_MI_Ahlan_pre_validation_table_SA;
+SEL * FROM twm_result.Rome_MI_Ahlan_post_validation_table_SA;
+SEL * FROM twm_result.Rome_MI_Ahlan_Groups_SA;
+
+
+--====================================================================================================================
+
+INSERT INTO Twm_result.AB_groups_termination
+SEL 11031  AS Group_Name
+,Current_Date AS termination_date;
+------
+INSERT INTO twm_Result.AB_Testing_Upload 
+SEL ab.Subscription_ID
+,11031   Tst_ControlGroup_Name
+,0 Tst_TargetGroup_Name
+,Current_Timestamp Entry_Time
+FROM twm_result.Rome_MI_Ahlan_Groups_SA ab
+WHERE Group_Name = 0;
+--====================================================================================================================
+
+INSERT INTO Twm_result.AB_groups_termination
+SEL 11032  AS Group_Name
+,Current_Date AS termination_date;
+------
+INSERT INTO twm_Result.AB_Testing_Upload 
+SEL ab.Subscription_ID
+,0 Tst_ControlGroup_Name
+,11032  Tst_TargetGroup_Name
+,Current_Timestamp Entry_Time
+FROM twm_result.Rome_MI_Ahlan_Groups_SA ab
+WHERE Group_Name = 1;
