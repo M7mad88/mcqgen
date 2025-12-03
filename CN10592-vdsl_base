@@ -1,0 +1,121 @@
+EXEC  PLDB.CRYSTAL_QUERY_BAND('Application=BussinessObjects;Report_Type=CrystalReport;Report_Id=204933;
+Report_Name=CN10592-vdsl_base;
+Report_Title=CN10592-vdsl_base;
+Report_Path=/UAT/Marketing;
+Report_Dev=amaher;');
+
+WITH base AS (
+SEL
+DSI.Access_Method_Val
+,rpsh.Subscription_Id
+,Billing_Cycle_Id
+,Rate_Plan_Desc
+,Rate_Plan_Group
+,Rate_Plan_Class
+,CAST (Subscription_Activation_Date  AS DATE )Subscription_Activation_Date
+,Subscription_Status_Group_Desc
+,CAST(DSI.Subscription_Status_Start_Dttm AS DATE) AS Current_Status_Date
+,SSR.Subsctn_Status_Reason_Desc AS Current_Status_Reason
+--,calendar_date  
+FROM  RATE_PLAN_SUBSCRIPTION_HIST AS rpsh	
+--INNER JOIN vdb.CALENDAR c ON c.calendar_date BETWEEN {?Date_From} AND {?Date_To}
+INNER JOIN  SUBSCRIPTION_STATUS_HIST AS ssh ON ssh.Subscription_Id = rpsh.Subscription_Id																														
+INNER JOIN VDB.SUBSCRIPTION_STATUS_TYPE ST ON ST.Subscription_Status_Type_Cd = ssh.Subscription_Status_Type_Cd																														
+INNER JOIN VDB.SUBSCRIPTION_STATUS_GROUP SG ON SG.Subscription_Status_Group_Cd = ST.Subscription_Status_Group_Cd
+INNER JOIN DETAILED_SUBSCRIPTION_INFO DSI ON DSI.Subscription_Id = rpsh.Subscription_Id
+INNER JOIN rate_plan AS rp ON rp.Rate_Plan_Product_Id = rpsh.Rate_Plan_Product_Id																														
+LEFT JOIN VDB.SUBSCRIPTION_STATUS_REASON SSR ON (DSI.Subsctn_Status_Reason_Cd = SSR.Subsctn_Status_Reason_Cd)																												
+WHERE (rpsh.Rate_Plan_Product_Id  IN (1616,1196,1441,1879,1880,1881,1882,1878)
+OR rp.Rate_Plan_Group IN ( 'ISP'  , 'ISP Corporate','FIXED'))
+AND CAST({?Date_To}   + 1 AS TIMESTAMP(0)) - INTERVAL '1' SECOND  BETWEEN rpsh.rate_plan_subscription_start_d   AND rpsh.crate_plan_subscription_end_dt 																														
+AND CAST({?Date_To}   + 1 AS TIMESTAMP(0)) - INTERVAL '1' SECOND  BETWEEN ssh.Subscription_Status_Start_Dttm   AND ssh.CSubscription_Status_End_Dttm 																														
+AND {?Date_To} >= {?Date_From}
+AND  SG.Subscription_Status_Group_Cd NOT IN ('-1','4')	
+--and rpsh.subscription_id = '23,481,955'
+QUALIFY ROW_NUMBER () OVER (PARTITION BY rpsh.Subscription_Id ORDER BY  rpsh.rate_plan_subscription_start_d DESC) = 1
+)
+
+SEL
+Access_Method_Val AS dial
+--,calendar_date
+,base.Subscription_Id
+,Billing_Cycle_Id
+,Rate_Plan_Desc
+,Rate_Plan_Group
+,Rate_Plan_Class
+,granted_MBs
+--,Used_MB 
+,Total_MBs
+,Subscription_Activation_Date
+,Subscription_Status_Group_Desc
+,Current_Status_Date
+,Current_Status_Reason
+,COALESCE(Online_Flag,'N') AS Online_Flag
+,COALESCE(Fair_Flag	 ,'N') AS Fair_Flag
+FROM base
+
+-------------------------------------------------------USAGE ----------------------
+LEFT JOIN(
+SEL 
+base.subscription_id
+--,Call_Start_date
+,SUM (ZEROIFNULL(Data_volume / 1024.0000 / 1024.0000)) AS Used_MB
+FROM (SEL Subscription_Id FROM base GROUP BY 1)base
+LEFT JOIN 
+vdb.AGG_NW_ACTIVITY_SUBS_DAILY SPUCH ON base.subscription_id = SPUCH.Subscription_Id 
+WHERE Usage_Type <> 'MTC'
+AND Call_Start_date BETWEEN {?Date_From} AND {?Date_To}
+AND {?Date_To} >= {?Date_From}
+GROUP BY 1
+--,2
+)ucd ON ucd.Subscription_Id = base.subscription_id --and base.calendar_date = ucd.Call_Start_date
+
+-------------------- USAGE READIUS FIXED ACTIVITY -----------------
+LEFT JOIN
+(
+SELECT
+Subscription_Id
+,SUM(COALESCE(CASE WHEN COALESCE(bytes_out,0)  < 0 THEN (((down_turns*4294967295.00)+(4294967295.00+COALESCE(bytes_out,0)))/1048576.00) END,0) + COALESCE(CASE WHEN bytes_out >0 THEN (((down_turns*4294967295.00)+(COALESCE(bytes_out,0)))/1048576.00) END,0) ) Download_MBs
+,SUM (COALESCE(CASE WHEN COALESCE(bytes_in,0) < 0 THEN (((up_turns*4294967295.00)+(4294967295.00+COALESCE(bytes_in,0)))/1048576.00) END,0) + COALESCE(CASE WHEN bytes_in >0 THEN (((up_turns*4294967295.00)+(COALESCE(bytes_in,0)))/11048576.00) END,0) ) Upload_Mbs
+,ZEROIFNULL(Download_MBs) + ZEROIFNULL(Upload_Mbs) Total_MBs
+FROM VDB.ISP_RADIUS_ACTIVITY USG
+WHERE USG.Session_Dttm BETWEEN CAST({?Date_From} AS TIMESTAMP) AND CAST({?Date_To} AS TIMESTAMP) + INTERVAL '1' DAY - INTERVAL '1' SECOND
+GROUP BY 1
+) radius on radius.subscription_id = base.subscription_id
+
+--------------=========================
+LEFT JOIN(
+SEL 
+base.subscription_id
+--,Profile_Dt
+,MAX (ZEROIFNULL(UT_Balance / 1024.0000 / 1024.0000)) AS granted_MBs
+FROM (SEL Subscription_Id FROM base GROUP BY 1)base
+LEFT JOIN vdb.SUBSCRIPTION_PROFILE_UT_HIST SPUTH ON base.subscription_id = SPUTH.Subscription_Id 
+WHERE ut_id = 98201  
+AND Profile_Dt BETWEEN {?Date_From} AND {?Date_To}
+AND {?Date_To} >= {?Date_From}
+GROUP BY 1
+--,2
+)utd ON utd.Subscription_Id = base.subscription_id --and base.calendar_date = utd.Profile_Dt
+
+---------======== Online -- Fair Flag ==============
+LEFT JOIN (
+
+SEL SOH.Subscription_Id
+,CASE WHEN SOH.Offering_Id = '24555' THEN 'Y' ELSE 'N' END AS Online_Flag
+,CASE WHEN SOH.Offering_Id = '18232' THEN 'Y' ELSE 'N' END AS Fair_Flag
+    
+     
+FROM BASE    
+inner join VDB.SUBSCRIPTION_OFFERING_HIST AS SOH ON SOH.Subscription_Id = BASE.SUBSCRIPTION_ID
+INNER JOIN VDB.OFFERING   O ON O.Offering_Id = SOH.Offering_Id   
+WHERE SOH.Offering_Id IN (
+24555 -- Ramsis Incident ISP Online Charging Marking Offer
+,18232 --Fair Usage Offer 
+)
+--AND Cast({?Date_To} AS TIMESTAMP(0)) + INTERVAL '1' DAY - INTERVAL '1' SECOND BETWEEN soh.Subscription_Offering_Start_Dt AND soh.CSubs_Offering_End_Dttm
+) bund on bund.Subscription_Id = base.Subscription_Id
+
+/*WHERE */
+/*Used_MB   IS NOT NULL
+AND Total_MBs IS NULL*/
