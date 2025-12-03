@@ -1,0 +1,94 @@
+-- ================================
+-- DSL_AFTER: stratification table
+-- ================================
+
+DROP TABLE twm_result.DSL_FullUtil_NoAddon_AFTER_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_AFTER_MHR AS
+(
+    SELECT
+        bs.Subscription_Id
+       ,bs.dial
+
+       /* ======================
+          Stratification columns
+          ====================== */
+
+       -- ARPU approximation over last 2 months
+       ,(ZEROIFNULL(bs.ADSL_Monthly_Fees_2M)
+         + ZEROIFNULL(bs.Router_Installments_2M)) / 2.0 AS ARPU_2M
+
+       ,CASE
+            WHEN (ZEROIFNULL(bs.ADSL_Monthly_Fees_2M)
+                  + ZEROIFNULL(bs.Router_Installments_2M)) / 2.0 < 100
+                THEN 'ARPU_0_100'
+            WHEN (ZEROIFNULL(bs.ADSL_Monthly_Fees_2M)
+                  + ZEROIFNULL(bs.Router_Installments_2M)) / 2.0 < 200
+                THEN 'ARPU_100_200'
+            WHEN (ZEROIFNULL(bs.ADSL_Monthly_Fees_2M)
+                  + ZEROIFNULL(bs.Router_Installments_2M)) / 2.0 < 300
+                THEN 'ARPU_200_300'
+            ELSE 'ARPU_300_PLUS'
+        END AS ARPU_Band
+
+       ,bs.Total_MBs_2M
+
+       ,CASE
+            WHEN bs.Total_MBs_2M < 50  THEN 'USG_0_50'
+            WHEN bs.Total_MBs_2M < 100 THEN 'USG_50_100'
+            WHEN bs.Total_MBs_2M < 200 THEN 'USG_100_200'
+            ELSE 'USG_200_PLUS'
+        END AS Usage_Band
+
+       ,bs.Rate_Plan_Group
+       ,bs.Rate_Plan_Desc
+       ,bs.Subscription_Status_Group_Desc AS Status
+
+       ,CASE
+            WHEN (DATE - bs.Subscription_Activation_Date) < 180 THEN 'TEN_SHORT'
+            WHEN (DATE - bs.Subscription_Activation_Date) < 365 THEN 'TEN_MED'
+            ELSE 'TEN_LONG'
+        END AS Tenure_Band
+
+       ,bs.Digital_User_Flag
+       ,bs.DSL_over_Fixed_Flag
+       ,bs.DSL_over_Emerald_Flag
+
+       ,'const' AS const
+
+       /* ========================
+          Revenue window (M3-M1)
+          ======================== */
+       ,SUM(CASE WHEN asrd.Revenue_Date BETWEEN DATE - 90 AND DATE - 61
+                 THEN asrd.Total_Revenue ELSE 0 END) AS M3_Total_Rev
+       ,SUM(CASE WHEN asrd.Revenue_Date BETWEEN DATE - 60 AND DATE - 31
+                 THEN asrd.Total_Revenue ELSE 0 END) AS M2_Total_Rev
+       ,SUM(CASE WHEN asrd.Revenue_Date BETWEEN DATE - 30 AND DATE - 1
+                 THEN asrd.Total_Revenue ELSE 0 END) AS M1_Total_Rev
+
+       /* =================
+          Global exclusions
+          ================= */
+       ,CASE
+            WHEN ab.Subscription_Id IS NULL
+             AND (mcg.UCG_Flag = 0 OR mcg.Subscription_Id IS NULL)
+            THEN 1
+            ELSE 0
+        END AS should_be_selected
+
+    FROM twm_result.DSL_FullUtil_NoAddon_BEFORE_MHR bs
+    LEFT JOIN VDB.Agg_Subs_Revenue_Daily asrd
+        ON asrd.Subscription_Id = bs.Subscription_Id
+       AND asrd.Revenue_Date BETWEEN DATE - 90 AND DATE - 1
+
+    LEFT JOIN VDB.AB_Testing_CG_TG ab
+        ON ab.Subscription_Id = bs.Subscription_Id
+
+    LEFT JOIN VDB.Master_Control_Group mcg
+        ON mcg.Subscription_Id = bs.Subscription_Id
+
+    GROUP BY
+        1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+)
+WITH DATA
+PRIMARY INDEX (Subscription_Id);
