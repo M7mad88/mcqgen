@@ -1,0 +1,60 @@
+DROP TABLE twm_result.DSL_Addon_AB_Before_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_Addon_AB_Before_MHR AS
+(
+    SELECT
+        b.subscription_id
+
+        -- raw KPIs you may need later in AFTER
+        ,k.arpu_60                       AS arpu_60
+        ,k.usage_gb_60                   AS usage_gb_60
+        ,b.rate_plan_code                AS rate_plan
+        ,b.sub_status                    AS status
+        ,b.tenure_days                   AS tenure_days
+        ,k.outgoing_activity_flag        AS outgoing_activity_flag
+        ,k.digital_engagement_score      AS digital_engagement
+        ,b.dsl_over_fixed_flag
+        ,b.dsl_over_emerald_flag
+
+    FROM vdb.dsl_base b
+    JOIN vdb.dsl_kpi_model k
+      ON b.subscription_id = k.subscription_id
+     AND k.running_date = DATE - 1
+
+    /* 1) FULL UTILIZERS DURING PAST 2 MONTHS */
+    JOIN
+    (
+        SELECT
+            u.subscription_id
+        FROM vdb.dsl_usage_daily u
+        JOIN vdb.dsl_quota q
+          ON u.subscription_id = q.subscription_id
+        WHERE u.usage_date BETWEEN ADD_MONTHS(DATE, -2) AND DATE - 1
+        GROUP BY 1
+        HAVING SUM(u.used_gb) >= 0.9 * SUM(q.quota_gb)   -- 90% = "full utilizer"
+    ) fu
+      ON b.subscription_id = fu.subscription_id
+
+    /* 2) NOT PURCHASING ANY ADD-ONS DURING PAST 2 MONTHS */
+    LEFT JOIN
+    (
+        SELECT
+            subscription_id
+        FROM vdb.dsl_addon_purchases a
+        WHERE a.purchase_date BETWEEN ADD_MONTHS(DATE, -2) AND DATE - 1
+        GROUP BY 1
+    ) ad
+      ON b.subscription_id = ad.subscription_id
+
+    WHERE
+        ad.subscription_id IS NULL        -- no add-ons in last 2 months
+        AND b.product_family = 'DSL'      -- DSL only (adjust)
+        AND b.sub_status = 'ACTIVE'       -- active only (adjust)
+)
+WITH DATA
+PRIMARY INDEX (subscription_id);
+
+
+--=============
+
+
