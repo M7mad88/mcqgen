@@ -1,0 +1,93 @@
+/*=========================================================
+  DSL AFTER
+  - Input  : twm_result.DSL_FullUtil_NoAddon_Before_MHR
+  - Output : stratified base + revenue + should_be_selected
+==========================================================*/
+
+DROP TABLE twm_result.DSL_FullUtil_NoAddon_After_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_After_MHR AS
+(
+    SEL
+        /* ====== Base & stratification columns ====== */
+        bs.Subscription_Id                                -- 1
+       ,bs.Rate_Plan_Group                                -- 2
+       ,bs.Rate_Plan_Category                             -- 3
+       ,bs.Rate_Plan_Desc                                 -- 4
+       ,bs.rate_plan_class                                -- 5
+       ,bs.Tenure_Days                                    -- 6
+       ,bs.DSL_Over_Fixed_Flag                            -- 7
+       ,bs.Digital_User_Flag                              -- 8
+       ,bs.Total_MBs_2M                                   -- 9
+
+       /* Usage band (2 months) */
+       ,CASE
+            WHEN bs.Total_MBs_2M < 50   THEN 'USG_0_50'
+            WHEN bs.Total_MBs_2M < 100  THEN 'USG_50_100'
+            WHEN bs.Total_MBs_2M < 200  THEN 'USG_100_200'
+            WHEN bs.Total_MBs_2M < 500  THEN 'USG_200_500'
+            ELSE 'USG_500_PLUS'
+        END                                              AS Usage_Band           -- 10
+
+       /* Tenure band (days) */
+       ,CASE
+            WHEN bs.Tenure_Days < 180  THEN 'TEN_SHORT'
+            WHEN bs.Tenure_Days < 365  THEN 'TEN_MED'
+            ELSE 'TEN_LONG'
+        END                                              AS Tenure_Band          -- 11
+
+       /* ====== Revenue windows (M3 / M2 / M1) ====== */
+       ,SUM(CASE
+              WHEN asrd.Revenue_Date BETWEEN DATE - 90 AND DATE - 61
+                   THEN asrd.Total_Revenue ELSE 0
+            END)                                         AS M3_Total_Rev         -- 12
+
+       ,SUM(CASE
+              WHEN asrd.Revenue_Date BETWEEN DATE - 60 AND DATE - 31
+                   THEN asrd.Total_Revenue ELSE 0
+            END)                                         AS M2_Total_Rev         -- 13
+
+       ,SUM(CASE
+              WHEN asrd.Revenue_Date BETWEEN DATE - 30 AND DATE - 1
+                   THEN asrd.Total_Revenue ELSE 0
+            END)                                         AS M1_Total_Rev         -- 14
+
+       /* ====== Exclusion logic (AB / Master CG) ====== */
+       ,CASE
+            WHEN AB.Subscription_Id IS NULL
+             AND (MCG.UCG_Flag = 0 OR MCG.Subscription_Id IS NULL)
+            THEN 1
+            ELSE 0
+        END                                              AS should_be_selected   -- 15
+
+    FROM twm_result.DSL_FullUtil_NoAddon_Before_MHR bs
+
+    /* existing AB tests */
+    LEFT JOIN VDB.AB_Testing_CG_TG AB
+        ON AB.Subscription_Id = bs.Subscription_Id
+
+    /* master control group */
+    LEFT JOIN VDB.Master_Control_Group MCG
+        ON MCG.Subscription_Id = bs.Subscription_Id
+
+    /* revenue */
+    LEFT JOIN VDB.Agg_Subs_Revenue_Daily asrd
+        ON asrd.Subscription_Id = bs.Subscription_Id
+       AND asrd.Revenue_Date BETWEEN DATE - 90 AND DATE - 1
+
+    /* group all non-aggregated columns (by position, MI-style) */
+    GROUP BY
+        1,  -- Subscription_Id
+        2,  -- Rate_Plan_Group
+        3,  -- Rate_Plan_Category
+        4,  -- Rate_Plan_Desc
+        5,  -- rate_plan_class
+        6,  -- Tenure_Days
+        7,  -- DSL_Over_Fixed_Flag
+        8,  -- Digital_User_Flag
+        9,  -- Total_MBs_2M
+        10, -- Usage_Band
+        11, -- Tenure_Band
+        15  -- should_be_selected
+)
+WITH DATA PRIMARY INDEX (Subscription_Id);
