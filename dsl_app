@@ -1,0 +1,219 @@
+
+WITH base AS (
+SEL
+DSI.Access_Method_Val as dial
+,dsi.account_id as account_id
+,dsi.Resp_Account_Id as Resp_Account_Id
+,rpsh.Subscription_Id 
+,Billing_Cycle_Id
+,Rate_Plan_Desc
+,Rate_Plan_Group
+,Rate_Plan_Class
+,CAST (Subscription_Activation_Date  AS DATE )Subscription_Activation_Date
+,Subscription_Status_Group_Desc
+,CAST(DSI.Subscription_Status_Start_Dttm AS DATE) AS Current_Status_Date
+,SSR.Subsctn_Status_Reason_Desc AS Current_Status_Reason
+--,calendar_date  		
+FROM  RATE_PLAN_SUBSCRIPTION_HIST AS rpsh	
+--INNER JOIN vdb.CALENDAR c ON c.calendar_date BETWEEN {?Date_From} AND {?Date_To}
+INNER JOIN  SUBSCRIPTION_STATUS_HIST AS ssh ON ssh.Subscription_Id = rpsh.Subscription_Id																														
+INNER JOIN VDB.SUBSCRIPTION_STATUS_TYPE ST ON ST.Subscription_Status_Type_Cd = ssh.Subscription_Status_Type_Cd																														
+INNER JOIN VDB.SUBSCRIPTION_STATUS_GROUP SG ON SG.Subscription_Status_Group_Cd = ST.Subscription_Status_Group_Cd
+INNER JOIN DETAILED_SUBSCRIPTION_INFO DSI ON DSI.Subscription_Id = rpsh.Subscription_Id
+INNER JOIN rate_plan AS rp ON rp.Rate_Plan_Product_Id = rpsh.Rate_Plan_Product_Id																														
+LEFT JOIN VDB.SUBSCRIPTION_STATUS_REASON SSR ON (DSI.Subsctn_Status_Reason_Cd = SSR.Subsctn_Status_Reason_Cd)																												
+WHERE (rpsh.Rate_Plan_Product_Id  IN (1616,1196,1441,1879,1880,1881,1882,1878)
+OR rp.Rate_Plan_Group IN ( 'ISP'  , 'ISP Corporate','FIXED'))
+AND CAST({?Date_To}   + 1 AS TIMESTAMP(0)) - INTERVAL '1' SECOND  BETWEEN rpsh.rate_plan_subscription_start_d   AND rpsh.crate_plan_subscription_end_dt 																														
+AND CAST({?Date_To}   + 1 AS TIMESTAMP(0)) - INTERVAL '1' SECOND  BETWEEN ssh.Subscription_Status_Start_Dttm   AND ssh.CSubscription_Status_End_Dttm 																														
+AND {?Date_To} >= {?Date_From} 
+AND  SG.Subscription_Status_Group_Cd NOT IN ('-1','4')	
+
+QUALIFY ROW_NUMBER () OVER (PARTITION BY rpsh.Subscription_Id ORDER BY  rpsh.rate_plan_subscription_start_d DESC) = 1
+)
+
+
+
+sel base.dial	
+,base.Subscription_Activation_Date as Activation_date
+,base.Current_Status_Reason
+,base.Current_Status_Date
+,base.Billing_Cycle_Id
+,base.Rate_Plan_Desc
+,base.Rate_Plan_Group
+,base.Subscription_Status_Group_Desc as Subscription_Status_Group_Desc
+,ZeroIfNull(ADSL_Monthly_fees)ADSL_Monthly_fees
+,ZeroIfNull(Total_Bill_Per_user)Total_Bill_Per_user
+,ZeroIfNull(Addons)Addons
+,ZeroIfNull(Renewable_Addons)Renewable_Addons
+,ZeroIfNull(Router_installments)Router_installments
+
+,coalesce (Digital_User_Flag , 'N' ) as Digital_User_Flag
+, Last_Processing_Date
+,CASE WHEN resp.Subscription_Id IS NOT NULL THEN 'Y' ELSE 'N' end AS  under_emerald_account_or_not
+,CASE WHEN respo.Subscription_Id IS NOT NULL THEN 'Y' ELSE 'N' end AS  Fixed_Over_ADSL
+,(CASE WHEN voucher2.Land_Line IS NOT NULL THEN 'Y' ELSE 'N' end) AS Emerald_flag
+,coalesce (Channel_name , 'NA' ) as Channel_name
+,coalesce (Addon_desc , 'NA') as Addon_desc
+,coalesce (Request_time , cast ('2999-01-01' as date) ) as Request_time
+,coalesce (service_status, 'NA') as service_status
+,coalesce (Migration_Desc,'NA') as Migration_Desc
+,coalesce (Creation_Date_Of_Migration,cast ('2999-01-01' as date ) ) as Creation_Date_Of_Migration
+
+from base	
+
+
+LEFT JOIN 
+(
+
+SEL
+Land_Line
+,Parent_DIAL
+FROM (
+    SEL  
+   so.Created_Date
+    ,so.Modified_Date
+    ,so.Order_Num
+    ,so.Order_Type
+    ,Max(CASE WHEN soi.Item_ID IN ('1-CDFQDYD','1-CDFQDYN','1-CB953K1','1-CNQ8GPZ','1-CDFQDYX') THEN si.Item_Nature end ) AS Siebel_ADSL_promotion
+    ,Max(CASE WHEN soi.Item_ID IN ('1-C8WTMG7') THEN soi.Item_Value end) AS Parent_DIAL
+    ,Max(CASE WHEN soi.Item_ID IN ('1-CDFQDYD','1-CDFQDYN','1-CB953K1','1-CNQ8GPZ','1-CDFQDYX') THEN soi.Item_Value end ) AS Land_Line
+    FROM Siebel_Order so
+    INNER JOIN Siebel_Order_Item soi ON soi.ORDER_ID=so.Order_ID
+    INNER JOIN  Siebel_Item si ON si.Item_ID=soi.Item_ID
+    WHERE so.Order_Desc ='Add Family ADSL Child'
+    AND so.Order_Status='Complete'
+    --AND so.Created_Date BETWEEN date '2021-07-01' AND date '2021-07-31'
+    AND  soi.Item_ID IN ('1-CDFQDYD','1-CDFQDYN','1-CB953K1','1-CNQ8GPZ','1-CDFQDYX','1-C8WTMG7','1-CDFQDYD','1-CDFQDYN','1-CB953K1','1-CNQ8GPZ','1-CDFQDYX')
+    GROUP BY 1,2,3,4
+
+QUALIFY Row_Number() Over (PARTITION BY Land_Line ORDER BY so.Created_Date DESC) = 1
+) AS a
+WHERE Parent_DIAL IS NOT NULL
+
+)voucher2 ON voucher2.Land_Line = base.dial
+
+
+
+LEFT JOIN(
+SELECT
+bs.Account_Id             
+,Bs.Bill_Stmt_Ref
+,Sum(CASE WHEN s.Service_Name='ADSL' THEN bsd.Transaction_Amt end ) AS ADSL_Monthly_fees
+,Sum(CASE WHEN s.Service_Name LIKE '%ADRO%' THEN bsd.Transaction_Amt END ) Addons
+,Sum( CASE WHEN s.Service_Name LIKE '%ADER%'  THEN bsd.Transaction_Amt end ) AS Renewable_Addons
+,Sum(CASE WHEN s.Service_Desc LIKE'%router%Installment%' THEN bsd.Transaction_Amt end ) AS Router_installments
+
+FROM  --fixed_BASE AS f INNER JOIN 
+vdb.BILLING_STATEMENT bs  --ON Bs.Account_Id=F.account_id
+INNER JOIN vdb.BILLING_STATEMENT_DETAIL bsd ON bsd.Bill_Stmt_Ref=bs.Bill_Stmt_Ref
+INNER JOIN vdb.Service s ON s.Service_Product_Id=bsd.Service_Product_Id
+
+WHERE bs.Bill_Stmt_Dt  BETWEEN {?Date_From} AND {?Date_To}
+AND bsd.Transaction_Dt  BETWEEN  {?Date_From} AND {?Date_To}
+AND bs.Billing_Type_Cd IN('1','2', '3','4')
+--AND bs.Account_Id = 89199175
+AND bs.Invoice_Type_Cd IN ('1', '5')
+GROUP BY 1,2
+
+) mon ON Mon.account_id=base.account_id
+
+
+left join 
+(
+
+
+
+sel 
+base.subscription_id
+,sum (service_gross_amt) as Total_Bill_Per_user
+,bill_date
+FROM  base
+left join VDB.billing_issuance_details bad on bad.subscription_id = base.subscription_id
+left join Service s on s.Service_Product_Id = bad.Service_Product_Id
+where bad.bill_date between {?Date_From} and {?Date_To}
+group by 1,3
+
+
+
+
+)rev on rev.subscription_id = base.subscription_id
+
+
+
+----------------- DATAMART APP ----------
+LEFT JOIN 
+(
+SEL
+base.subscription_id
+,MAX('Y') AS Digital_User_Flag
+,Max(Trx_Date) AS Last_Processing_Date
+FROM BASE
+INNER JOIN VDB.SuperApp_Datamart_Base_Daily DG ON DG.Subscription_Id = BASE.SUBSCRIPTION_ID
+WHERE Trx_Date BETWEEN {?Date_From} AND {?Date_To}
+GROUP BY 1
+) DM_dig ON DM_dig.subscription_id = BASE.subscription_id
+
+
+LEFT JOIN 
+		(
+		SELECT 
+		dsi.Account_Id
+		,dsi.Subscription_Id
+		,rp.Rate_Plan_Desc
+		FROM DETAILED_SUBSCRIPTION_INFO dsi
+		INNER JOIN VDB.rate_plan rp ON rp.Rate_Plan_Product_Id = dsi.Rate_Plan_Product_Id
+ 		WHERE dsi.Rate_Plan_Product_Id IN (1811,1916,1914,1816,1813,1814,1807,1805,1809,1803,1827,1818,1915,1810,1806,1913,1815,1808,1804,1917,1918)
+		
+		QUALIFY Row_Number() Over (PARTITION BY dsi.Account_Id ORDER BY Length(rp.Rate_Plan_Desc) DESC) = 1
+		)resp ON resp.Account_Id = base.Resp_Account_Id
+		
+		
+		
+		
+		left join (
+		
+		SELECT 
+		dsi.Account_Id
+		,dsi.Subscription_Id
+		,rp.Rate_Plan_Desc
+		FROM DETAILED_SUBSCRIPTION_INFO dsi
+		INNER JOIN VDB.rate_plan rp ON rp.Rate_Plan_Product_Id = dsi.Rate_Plan_Product_Id
+ 		WHERE dsi.Rate_Plan_Product_Id IN (1852,1856)
+				QUALIFY Row_Number() Over (PARTITION BY dsi.Account_Id ORDER BY Length(rp.Rate_Plan_Desc) DESC) = 1
+		) respo on respo.Account_Id = base.Resp_Account_Id
+		
+		left join (
+		
+		
+		
+sel ssr.subscription_id
+,service_channel_desc as Channel_name
+,ssv.service_desc as Addon_desc
+,cast (Request_time as date) Request_time
+,ssv.service_status
+from 
+sub_service_request As ssr
+LEFT JOIN VDB.sub_service_channel AS su1 ON su1.service_channel_id = ssr.Source_Channel_ID
+left JOIN VDB.sub_service AS ssv ON ssv.service_id = ssr.service_id
+where Channel_name = 'Mobile Application'
+and cast (Request_time as date) between {?Date_From} and {?Date_To}
+
+
+		)App on App.subscription_id = base.subscription_id
+		
+		
+		
+left join (
+
+sel base.subscription_id	
+,Event_Desc as Migration_Desc
+,Event_Start_Dttm as Creation_Date_Of_Migration
+
+from base 
+inner join EVENT e on e.subscription_id = base.subscription_id
+
+where e.Event_Desc like '%Migration_tool%'
+and e.Event_Start_Dttm between {?Date_From} and {?Date_To}
+) Migration on migration.subscription_id = base.subscription_id
+
