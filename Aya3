@@ -1,20 +1,37 @@
-SEL
-    MIN(Tenure_Days) AS Min_Tenure,
-    MAX(Tenure_Days) AS Max_Tenure,
-    AVG(Tenure_Days) AS Avg_Tenure,
+WITH base AS (
+    SELECT 
+        Tenure_Days
+    FROM vdb.Etisalat_active_base
+    WHERE Running_Date = DATE - 1
+      AND Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
+),
+ordered AS (
+    SELECT
+        Tenure_Days,
+        ROW_NUMBER() OVER (ORDER BY Tenure_Days) AS rn,
+        COUNT(*) OVER () AS total_cnt
+    FROM base
+)
+SELECT
+    /* Basic statistics */
+    (SELECT MIN(Tenure_Days) FROM base) AS Min_Tenure,
+    (SELECT MAX(Tenure_Days) FROM base) AS Max_Tenure,
+    (SELECT AVG(Tenure_Days) FROM base) AS Avg_Tenure,
 
-    PERCENTILE_CONT(0.25)
-        WITHIN GROUP (ORDER BY Tenure_Days)
-        OVER () AS P25_Tenure,
+    /* P25 */
+    (SELECT Tenure_Days 
+     FROM ordered
+     WHERE rn = CAST(total_cnt * 0.25 AS INT)
+     QUALIFY ROW_NUMBER() OVER () = 1) AS P25,
 
-    PERCENTILE_CONT(0.50)
-        WITHIN GROUP (ORDER BY Tenure_Days)
-        OVER () AS Median_Tenure,
+    /* Median (P50) */
+    (SELECT Tenure_Days 
+     FROM ordered
+     WHERE rn = CAST(total_cnt * 0.50 AS INT)
+     QUALIFY ROW_NUMBER() OVER () = 1) AS Median_P50,
 
-    PERCENTILE_CONT(0.75)
-        WITHIN GROUP (ORDER BY Tenure_Days)
-        OVER () AS P75_Tenure
-
-FROM vdb.Etisalat_active_base
-WHERE Running_Date = DATE - 1
-AND Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED');
+    /* P75 */
+    (SELECT Tenure_Days 
+     FROM ordered
+     WHERE rn = CAST(total_cnt * 0.75 AS INT)
+     QUALIFY ROW_NUMBER() OVER () = 1) AS P75;
