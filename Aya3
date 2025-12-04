@@ -1,0 +1,20 @@
+SEL
+    MIN(Tenure_Days) AS Min_Tenure,
+    MAX(Tenure_Days) AS Max_Tenure,
+    AVG(Tenure_Days) AS Avg_Tenure,
+
+    PERCENTILE_CONT(0.25)
+        WITHIN GROUP (ORDER BY Tenure_Days)
+        OVER () AS P25_Tenure,
+
+    PERCENTILE_CONT(0.50)
+        WITHIN GROUP (ORDER BY Tenure_Days)
+        OVER () AS Median_Tenure,
+
+    PERCENTILE_CONT(0.75)
+        WITHIN GROUP (ORDER BY Tenure_Days)
+        OVER () AS P75_Tenure
+
+FROM vdb.Etisalat_active_base
+WHERE Running_Date = DATE - 1
+AND Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED');
