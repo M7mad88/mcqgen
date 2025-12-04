@@ -1,37 +1,15 @@
-WITH base AS (
-    SELECT 
-        Tenure_Days
-    FROM vdb.Etisalat_active_base
-    WHERE Running_Date = DATE - 1
-      AND Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
-),
-ordered AS (
-    SELECT
-        Tenure_Days,
-        ROW_NUMBER() OVER (ORDER BY Tenure_Days) AS rn,
-        COUNT(*) OVER () AS total_cnt
-    FROM base
-)
-SELECT
-    /* Basic statistics */
-    (SELECT MIN(Tenure_Days) FROM base) AS Min_Tenure,
-    (SELECT MAX(Tenure_Days) FROM base) AS Max_Tenure,
-    (SELECT AVG(Tenure_Days) FROM base) AS Avg_Tenure,
-
-    /* P25 */
-    (SELECT Tenure_Days 
-     FROM ordered
-     WHERE rn = CAST(total_cnt * 0.25 AS INT)
-     QUALIFY ROW_NUMBER() OVER () = 1) AS P25,
-
-    /* Median (P50) */
-    (SELECT Tenure_Days 
-     FROM ordered
-     WHERE rn = CAST(total_cnt * 0.50 AS INT)
-     QUALIFY ROW_NUMBER() OVER () = 1) AS Median_P50,
-
-    /* P75 */
-    (SELECT Tenure_Days 
-     FROM ordered
-     WHERE rn = CAST(total_cnt * 0.75 AS INT)
-     QUALIFY ROW_NUMBER() OVER () = 1) AS P75;
+SEL
+    CASE
+        WHEN Tenure_Days < 180   THEN 'TEN_NEW_0_6M'
+        WHEN Tenure_Days < 1095  THEN 'TEN_MID_6_36M'
+        ELSE 'TEN_LOYAL_36M_PLUS'
+    END AS Tenure_Band,
+    COUNT(*) AS Num_of_Subs
+FROM vdb.Etisalat_active_base
+WHERE Running_Date = DATE - 1
+  AND (
+        Rate_Plan_Product_Id IN (1616,1196,1441,1879,1880,1881,1882,1878)
+        OR Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
+      )
+GROUP BY 1
+ORDER BY 1;
