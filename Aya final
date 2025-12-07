@@ -1,0 +1,226 @@
+/* ========================================================
+   DSL BEFORE  – Full Utilizers (100%) & No Addons
+   Window: September + October (calendar months)
+   Base: vdb.Etisalat_active_base
+   ======================================================== */
+
+DROP TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR AS
+(
+    SELECT
+        /* === Key & base attributes === */
+        bs.Subscription_Id                          -- 1
+       ,bs.Rate_Plan_Group                          -- 2
+       ,bs.Rate_Plan_Category                       -- 3
+       ,bs.Rate_Plan_Desc                           -- 4
+       ,bs.rate_plan_class                          -- 5
+       ,bs.Tenure_Days                              -- 6
+       ,bs.DSL_Over_Fixed_Flag                      -- 7
+       ,bs.Main_Account_Num                         -- 8  (for billing join)
+
+       /* === Usage & quota per month === */
+       ,ZEROIFNULL(usg_sep.Total_MBs_Sep)           AS Total_MBs_Sep          -- 9
+       ,ZEROIFNULL(qta_sep.Granted_MBs_Sep)         AS Granted_MBs_Sep        --10
+       ,ZEROIFNULL(usg_oct.Total_MBs_Oct)           AS Total_MBs_Oct          --11
+       ,ZEROIFNULL(qta_oct.Granted_MBs_Oct)         AS Granted_MBs_Oct        --12
+
+       /* === Addons per month === */
+       ,ZEROIFNULL(mon_sep.Addons_Sep)              AS Addons_Sep             --13
+       ,ZEROIFNULL(mon_sep.Renew_Sep)               AS Renew_Sep              --14
+       ,ZEROIFNULL(mon_oct.Addons_Oct)              AS Addons_Oct             --15
+       ,ZEROIFNULL(mon_oct.Renew_Oct)               AS Renew_Oct              --16
+
+       /* === Digital flag (any activity in Sep+Oct) === */
+       ,COALESCE(dig.Digital_User_Flag,'N')         AS Digital_User_Flag      --17
+
+    FROM vdb.Etisalat_active_base bs
+
+    /*----------------------------------------------
+      USAGE – SEPTEMBER (Radius)
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            SUM(
+                  COALESCE(
+                      CASE WHEN COALESCE(bytes_out,0) < 0
+                           THEN ((down_turns*4294967295.00)
+                               +(4294967295.00+COALESCE(bytes_out,0)))/1048576.00
+                      END,0)
+                + COALESCE(
+                      CASE WHEN bytes_out > 0
+                           THEN ((down_turns*4294967295.00)
+                               +(COALESCE(bytes_out,0)))/1048576.00
+                      END,0)
+                + COALESCE(
+                      CASE WHEN COALESCE(bytes_in,0) < 0
+                           THEN ((up_turns*4294967295.00)
+                               +(4294967295.00+COALESCE(bytes_in,0)))/1048576.00
+                      END,0)
+                + COALESCE(
+                      CASE WHEN bytes_in > 0
+                           THEN ((up_turns*4294967295.00)
+                               +(COALESCE(bytes_in,0)))/1048576.00
+                      END,0)
+            ) AS Total_MBs_Sep
+        FROM VDB.ISP_RADIUS_ACTIVITY
+        WHERE CAST(Session_Dttm AS DATE)
+              BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
+        GROUP BY 1
+    ) usg_sep
+      ON usg_sep.Subscription_Id = bs.Subscription_Id
+
+    /*----------------------------------------------
+      USAGE – OCTOBER (Radius)
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            SUM(
+                  COALESCE(
+                      CASE WHEN COALESCE(bytes_out,0) < 0
+                           THEN ((down_turns*4294967295.00)
+                               +(4294967295.00+COALESCE(bytes_out,0)))/1048576.00
+                      END,0)
+                + COALESCE(
+                      CASE WHEN bytes_out > 0
+                           THEN ((down_turns*4294967295.00)
+                               +(COALESCE(bytes_out,0)))/1048576.00
+                      END,0)
+                + COALESCE(
+                      CASE WHEN COALESCE(bytes_in,0) < 0
+                           THEN ((up_turns*4294967295.00)
+                               +(4294967295.00+COALESCE(bytes_in,0)))/1048576.00
+                      END,0)
+                + COALESCE(
+                      CASE WHEN bytes_in > 0
+                           THEN ((up_turns*4294967295.00)
+                               +(COALESCE(bytes_in,0)))/1048576.00
+                      END,0)
+            ) AS Total_MBs_Oct
+        FROM VDB.ISP_RADIUS_ACTIVITY
+        WHERE CAST(Session_Dttm AS DATE)
+              BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+        GROUP BY 1
+    ) usg_oct
+      ON usg_oct.Subscription_Id = bs.Subscription_Id
+
+    /*----------------------------------------------
+      QUOTA – SEPTEMBER (UT balance)
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            MAX(ZEROIFNULL(UT_Balance / 1024.0 / 1024.0)) AS Granted_MBs_Sep
+        FROM vdb.SUBSCRIPTION_PROFILE_UT_HIST
+        WHERE ut_id = 98201
+          AND Profile_Dt BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
+        GROUP BY 1
+    ) qta_sep
+      ON qta_sep.Subscription_Id = bs.Subscription_Id
+
+    /*----------------------------------------------
+      QUOTA – OCTOBER (UT balance)
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            MAX(ZEROIFNULL(UT_Balance / 1024.0 / 1024.0)) AS Granted_MBs_Oct
+        FROM vdb.SUBSCRIPTION_PROFILE_UT_HIST
+        WHERE ut_id = 98201
+          AND Profile_Dt BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+        GROUP BY 1
+    ) qta_oct
+      ON qta_oct.Subscription_Id = bs.Subscription_Id
+
+    /*----------------------------------------------
+      ADDONS – SEPTEMBER (billing)
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            bills.Account_Id,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADRO%'
+                     THEN bsd.Transaction_Amt END) AS Addons_Sep,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADER%'
+                     THEN bsd.Transaction_Amt END) AS Renew_Sep
+        FROM  vdb.BILLING_STATEMENT bills
+        JOIN  vdb.BILLING_STATEMENT_DETAIL bsd
+              ON bsd.Bill_Stmt_Ref = bills.Bill_Stmt_Ref
+        JOIN  vdb.Service s
+              ON s.Service_Product_Id = bsd.Service_Product_Id
+        WHERE bills.Bill_Stmt_Dt  BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
+          AND bsd.Transaction_Dt   BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
+          AND bills.Billing_Type_Cd IN ('1','2','3','4')
+          AND bills.Invoice_Type_Cd IN ('1','5')
+        GROUP BY 1
+    ) mon_sep
+      ON mon_sep.Account_Id = bs.Main_Account_Num
+
+    /*----------------------------------------------
+      ADDONS – OCTOBER (billing)
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            bills.Account_Id,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADRO%'
+                     THEN bsd.Transaction_Amt END) AS Addons_Oct,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADER%'
+                     THEN bsd.Transaction_Amt END) AS Renew_Oct
+        FROM  vdb.BILLING_STATEMENT bills
+        JOIN  vdb.BILLING_STATEMENT_DETAIL bsd
+              ON bsd.Bill_Stmt_Ref = bills.Bill_Stmt_Ref
+        JOIN  vdb.Service s
+              ON s.Service_Product_Id = bsd.Service_Product_Id
+        WHERE bills.Bill_Stmt_Dt  BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+          AND bsd.Transaction_Dt   BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+          AND bills.Billing_Type_Cd IN ('1','2','3','4')
+          AND bills.Invoice_Type_Cd IN ('1','5')
+        GROUP BY 1
+    ) mon_oct
+      ON mon_oct.Account_Id = bs.Main_Account_Num
+
+    /*----------------------------------------------
+      DIGITAL FLAG – any activity in Sep or Oct
+      ----------------------------------------------*/
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            MAX('Y') AS Digital_User_Flag
+        FROM VDB.SuperApp_Datamart_Base_Daily
+        WHERE Trx_Date BETWEEN DATE '2025-09-01' AND DATE '2025-10-31'
+        GROUP BY 1
+    ) dig
+      ON dig.Subscription_Id = bs.Subscription_Id
+
+    /* ==================== CRITERIA ==================== */
+    WHERE
+        /* Base snapshot at end of October (can change if needed) */
+        bs.Running_Date = DATE '2025-10-31'
+
+        /* DSL only – same as CN10592 style */
+        AND (
+              bs.Rate_Plan_Product_Id IN (1616,1196,1441,1879,1880,1881,1882,1878)
+              OR bs.Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
+            )
+
+        /* Full Utilizer 100% in BOTH months: Total >= Granted */
+        AND qta_sep.Granted_MBs_Sep > 0
+        AND qta_oct.Granted_MBs_Oct > 0
+        AND usg_sep.Total_MBs_Sep >= qta_sep.Granted_MBs_Sep
+        AND usg_oct.Total_MBs_Oct >= qta_oct.Granted_MBs_Oct
+
+        /* No addons in BOTH months */
+        AND COALESCE(mon_sep.Addons_Sep,0) = 0
+        AND COALESCE(mon_sep.Renew_Sep,0)  = 0
+        AND COALESCE(mon_oct.Addons_Oct,0) = 0
+        AND COALESCE(mon_oct.Renew_Oct,0)  = 0
+)
+WITH DATA PRIMARY INDEX (Subscription_Id);
