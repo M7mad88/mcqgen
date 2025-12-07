@@ -1,0 +1,257 @@
+/*=========================================================
+  DSL BEFORE (FINAL – as per BO feedback)
+  - Base: vdb.Etisalat_active_base (DSL only)
+  - Full Utilizer: Total_MBs_2M >= Granted_MBs_2M  (100%)
+  - No addons in last 2 months
+  - Adds Billing_Cycle_Id from RATE_PLAN_SUBSCRIPTION_HIST
+==========================================================*/
+
+DROP TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR AS
+(
+    SEL
+        /* === Key & base attributes === */
+        bs.Subscription_Id                           -- 1
+       ,bs.Rate_Plan_Group                           -- 2
+       ,bs.Rate_Plan_Category                        -- 3
+       ,bs.Rate_Plan_Desc                            -- 4
+       ,bs.rate_plan_class                           -- 5
+       ,bs.Tenure_Days                               -- 6
+       ,bs.DSL_Over_Fixed_Flag                       -- 7
+
+       /* Billing cycle brought from CN10592 logic */
+       ,rpsh.Billing_Cycle_Id                        -- 8
+
+       /* === 2-month usage / quota === */
+       ,ZEROIFNULL(usg.Total_MBs_2M)     AS Total_MBs_2M        -- 9
+       ,ZEROIFNULL(qta.Granted_MBs_2M)   AS Granted_MBs_2M      -- 10
+
+       /* === 2-month addons === */
+       ,ZEROIFNULL(mon.Addons_2M)        AS Addons_2M           -- 11
+       ,ZEROIFNULL(mon.Renew_2M)         AS Renewable_Addons_2M -- 12
+
+       /* === Digital flag === */
+       ,COALESCE(dig.Digital_User_Flag,'N') AS Digital_User_Flag -- 13
+
+    FROM vdb.Etisalat_active_base bs
+
+    /* ===== Bring Billing_Cycle_Id (from CN10592 base logic) ===== */
+    LEFT JOIN RATE_PLAN_SUBSCRIPTION_HIST rpsh
+      ON rpsh.Subscription_Id = bs.Subscription_Id
+     AND CAST(bs.Running_Date + 1 AS TIMESTAMP(0)) - INTERVAL '1' SECOND
+         BETWEEN rpsh.rate_plan_subscription_start_d
+             AND rpsh.crate_plan_subscription_end_dt
+
+    /* ===== USAGE 2M (Radius) ===== */
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            SUM(
+                COALESCE(
+                    CASE WHEN COALESCE(bytes_out,0) < 0
+                         THEN (((down_turns*4294967295.00)
+                               +(4294967295.00+COALESCE(bytes_out,0)))/1048576.00)
+                    END,0)
+                +
+                COALESCE(
+                    CASE WHEN bytes_out > 0
+                         THEN (((down_turns*4294967295.00)
+                               +(COALESCE(bytes_out,0)))/1048576.00)
+                    END,0)
+                +
+                COALESCE(
+                    CASE WHEN COALESCE(bytes_in,0) < 0
+                         THEN (((up_turns*4294967295.00)
+                               +(4294967295.00+COALESCE(bytes_in,0)))/1048576.00)
+                    END,0)
+                +
+                COALESCE(
+                    CASE WHEN bytes_in > 0
+                         THEN (((up_turns*4294967295.00)
+                               +(COALESCE(bytes_in,0)))/1048576.00)
+                    END,0)
+            ) AS Total_MBs_2M
+        FROM VDB.ISP_RADIUS_ACTIVITY
+        WHERE Session_Dttm BETWEEN
+              CAST(ADD_MONTHS(DATE,-2) AS TIMESTAMP)
+          AND CAST(DATE-1 AS TIMESTAMP)
+                + INTERVAL '1' DAY - INTERVAL '1' SECOND
+        GROUP BY 1
+    ) usg
+      ON usg.Subscription_Id = bs.Subscription_Id
+
+    /* ===== QUOTA 2M (UT balance) ===== */
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            MAX(ZEROIFNULL(UT_Balance / 1024.0 / 1024.0)) AS Granted_MBs_2M
+        FROM vdb.SUBSCRIPTION_PROFILE_UT_HIST
+        WHERE ut_id = 98201
+          AND Profile_Dt BETWEEN ADD_MONTHS(DATE,-2) AND DATE-1
+        GROUP BY 1
+    ) qta
+      ON qta.Subscription_Id = bs.Subscription_Id
+
+    /* ===== ADDONS 2M (billing) ===== */
+    LEFT JOIN
+    (
+        SELECT
+            bs.Account_Id,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADRO%'
+                     THEN bsd.Transaction_Amt END) AS Addons_2M,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADER%'
+                     THEN bsd.Transaction_Amt END) AS Renew_2M
+        FROM  vdb.BILLING_STATEMENT bs
+        JOIN  vdb.BILLING_STATEMENT_DETAIL bsd
+              ON bsd.Bill_Stmt_Ref = bs.Bill_Stmt_Ref
+        JOIN  vdb.Service s
+              ON s.Service_Product_Id = bsd.Service_Product_Id
+        WHERE bs.Bill_Stmt_Dt  BETWEEN ADD_MONTHS(DATE,-2) AND DATE-1
+          AND bsd.Transaction_Dt BETWEEN ADD_MONTHS(DATE,-2) AND DATE-1
+          AND bs.Billing_Type_Cd IN ('1','2','3','4')
+          AND bs.Invoice_Type_Cd IN ('1','5')
+        GROUP BY 1
+    ) mon
+      -- NOTE: Etisalat_active_base does not have Account_Id, we use Main_Account_Num
+      ON mon.Account_Id = bs.Main_Account_Num
+
+    /* ===== DIGITAL FLAG 2M ===== */
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            MAX('Y') AS Digital_User_Flag
+        FROM VDB.SuperApp_Datamart_Base_Daily
+        WHERE Trx_Date BETWEEN ADD_MONTHS(DATE,-2) AND DATE-1
+        GROUP BY 1
+    ) dig
+      ON dig.Subscription_Id = bs.Subscription_Id
+
+    /* ==================== CRITERIA ==================== */
+    WHERE
+        bs.Running_Date = DATE - 1
+
+        /* DSL only (same as report) */
+        AND (
+              bs.Rate_Plan_Product_Id IN (1616,1196,1441,1879,1880,1881,1882,1878)
+              OR bs.Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
+            )
+
+        /* Full Utilizer STRICT (Total >= Granted) */
+        AND qta.Granted_MBs_2M > 0
+        AND usg.Total_MBs_2M >= qta.Granted_MBs_2M
+
+        /* No Addons in last 2 months */
+        AND COALESCE(mon.Addons_2M,0) = 0
+        AND COALESCE(mon.Renew_2M,0) = 0
+
+    GROUP BY
+        1,2,3,4,5,6,7,8,
+        9,10,11,12,13
+)
+WITH DATA PRIMARY INDEX (Subscription_Id);
+-----------
+
+--=========================================================
+-- DSL AFTER  – Full Utilizers, No Addons (Final Version)
+--  - Base:   twm_result.DSL_FullUtil_NoAddon_Before_MHR
+--  - Rev:    VDB.billing_issuance_details (M3/M2/M1)
+--  - Tenure: 0–6M, 6–36M, >36M
+--=========================================================
+
+DROP TABLE twm_result.DSL_FullUtil_NoAddon_After_MHR;
+
+CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_After_MHR AS
+(
+    SEL
+        /* ====== Stratification columns ====== */
+        bs.Subscription_Id                                 -- 1
+       ,bs.Rate_Plan_Group                                 -- 2
+       ,bs.Tenure_Days                                     -- 3
+       ,bs.DSL_Over_Fixed_Flag                             -- 4
+       ,bs.Digital_User_Flag                               -- 5
+       ,bs.Total_MBs_2M                                    -- 6
+       ,bs.Billing_Cycle_Id                                -- 7  (from BEFORE)
+
+       /* Usage band (2 months) */
+       ,CASE
+            WHEN bs.Total_MBs_2M < 50    THEN 'USG_0_50'
+            WHEN bs.Total_MBs_2M < 100   THEN 'USG_50_100'
+            WHEN bs.Total_MBs_2M < 200   THEN 'USG_100_200'
+            WHEN bs.Total_MBs_2M < 500   THEN 'USG_200_500'
+            ELSE 'USG_500_PLUS'
+        END                                               AS Usage_Band          -- 8
+
+       /* Tenure band (days) */
+       ,CASE
+            WHEN bs.Tenure_Days < 180   THEN 'TEN_NEW_0_6M'
+            WHEN bs.Tenure_Days < 1095  THEN 'TEN_MID_6_36M'
+            ELSE 'TEN_LOYAL_36M_PLUS'
+        END                                               AS Tenure_Band        -- 9
+
+       /* Revenue windows (from billing_issuance_details) */
+       ,ZEROIFNULL(rev.M3_Total_Rev)                      AS M3_Total_Rev       -- 10
+       ,ZEROIFNULL(rev.M2_Total_Rev)                      AS M2_Total_Rev       -- 11
+       ,ZEROIFNULL(rev.M1_Total_Rev)                      AS M1_Total_Rev       -- 12
+
+       /* Exclusion logic (AB / Master CG) */
+       ,CASE
+            WHEN AB.Subscription_Id IS NULL
+             AND (MCG.UCG_Flag = 0 OR MCG.Subscription_Id IS NULL)
+            THEN 1
+            ELSE 0
+        END                                               AS should_be_selected -- 13
+
+    FROM twm_result.DSL_FullUtil_NoAddon_Before_MHR bs
+
+    /* Revenue from billing_issuance_details */
+    LEFT JOIN
+    (
+        SELECT
+            bad.Subscription_Id,
+            SUM(
+                CASE
+                    WHEN bad.bill_date BETWEEN DATE - 90 AND DATE - 61
+                    THEN bad.service_gross_amt
+                    ELSE 0
+                END
+            ) AS M3_Total_Rev,
+            SUM(
+                CASE
+                    WHEN bad.bill_date BETWEEN DATE - 60 AND DATE - 31
+                    THEN bad.service_gross_amt
+                    ELSE 0
+                END
+            ) AS M2_Total_Rev,
+            SUM(
+                CASE
+                    WHEN bad.bill_date BETWEEN DATE - 30 AND DATE - 1
+                    THEN bad.service_gross_amt
+                    ELSE 0
+                END
+            ) AS M1_Total_Rev
+        FROM VDB.billing_issuance_details bad
+        WHERE bad.bill_date BETWEEN DATE - 90 AND DATE - 1
+        GROUP BY 1
+    ) rev
+        ON rev.Subscription_Id = bs.Subscription_Id
+
+    /* Existing AB tests */
+    LEFT JOIN VDB.AB_Testing_CG_TG AB
+        ON AB.Subscription_Id = bs.Subscription_Id
+
+    /* Master control group */
+    LEFT JOIN VDB.Master_Control_Group MCG
+        ON MCG.Subscription_Id = bs.Subscription_Id
+
+    GROUP BY
+        1,2,3,4,5,6,7,
+        8,9,
+        10,11,12,
+        13
+)
+WITH DATA PRIMARY INDEX (Subscription_Id);
+
