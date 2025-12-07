@@ -1,205 +1,222 @@
-/*======================================================================
-   DSL BEFORE TABLE
-   Full Utilizer 100% AND No Addons in TWO consecutive windows:
-      M1 = last 30 days      (DATE-30  → DATE-1)
-      M2 = previous 30 days  (DATE-60  → DATE-31)
-
-   Base: vdb.Etisalat_active_base
-========================================================================*/
+/* =========================================================
+   DSL BEFORE - Full Utilizer 100% in 2 consecutive months
+   - Base: vdb.Etisalat_active_base (DSL only)
+   - Months:
+       M1 = 2024-09 (September)
+       M2 = 2024-10 (October)
+   - Criteria:
+       * DSL subscriber (rate_plan filters)
+       * Active on last day of M2 (via Running_Date)
+       * In BOTH months:
+           - Granted_MBs_MX > 0
+           - Total_MBs_MX >= Granted_MBs_MX   (100% utilizer)
+           - Addons_MX = 0 and Renewable_Addons_MX = 0
+========================================================= */
 
 DROP TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR;
 
-CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR AS 
+CREATE MULTISET TABLE twm_result.DSL_FullUtil_NoAddon_Before_MHR AS
 (
-    /*==================== 1) BASE ====================*/
-    WITH base AS (
-        SELECT
-            Subscription_Id,
-            Rate_Plan_Group,
-            Rate_Plan_Category,
-            Rate_Plan_Desc,
-            rate_plan_class,
-            Tenure_Days,
-            DSL_Over_Fixed_Flag,
-            Main_Account_Num
-        FROM vdb.Etisalat_active_base
-        WHERE Running_Date = DATE - 1
-          AND (
-                Rate_Plan_Product_Id IN (1616,1196,1441,1879,1880,1881,1882,1878)
-                OR Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
-              )
-    ),
+    SELECT
+        ab.Subscription_Id                                             -- 1
+      , ab.Rate_Plan_Group                                             -- 2
+      , ab.Rate_Plan_Category                                          -- 3
+      , ab.Rate_Plan_Desc                                              -- 4
+      , ab.rate_plan_class                                             -- 5
+      , ab.Tenure_Days                                                 -- 6
+      , ab.DSL_Over_Fixed_Flag                                         -- 7
+      , COALESCE(dig.Digital_User_Flag, 'N') AS Digital_User_Flag      -- 8
 
-    /*==================== 2) USAGE (Radius) ====================*/
-    usg_win AS (
+      , ZEROIFNULL(usage_m1.Total_MBs_M1)     AS Total_MBs_M1          -- 9
+      , ZEROIFNULL(quota_m1.Granted_MBs_M1)   AS Granted_MBs_M1        -- 10
+      , ZEROIFNULL(add_m1.Addons_M1)          AS Addons_M1             -- 11
+      , ZEROIFNULL(add_m1.Renew_M1)           AS Renewable_Addons_M1   -- 12
+
+      , ZEROIFNULL(usage_m2.Total_MBs_M2)     AS Total_MBs_M2          -- 13
+      , ZEROIFNULL(quota_m2.Granted_MBs_M2)   AS Granted_MBs_M2        -- 14
+      , ZEROIFNULL(add_m2.Addons_M2)          AS Addons_M2             -- 15
+      , ZEROIFNULL(add_m2.Renew_M2)           AS Renewable_Addons_M2   -- 16
+
+    FROM vdb.Etisalat_active_base ab
+
+    /* ------------ DSL only (same definition as report) ---------------- */
+    WHERE ab.Running_Date = DATE '2025-10-31'   -- last day of M2 (October)
+      AND (
+            ab.Rate_Plan_Product_Id IN (1616,1196,1441,1879,1880,1881,1882,1878)
+            OR ab.Rate_Plan_Group IN ('ISP','ISP Corporate','FIXED')
+          )
+
+    /* ==================================================================
+       LEFT JOINS - aggregate per month
+       ================================================================== */
+
+    /* ------------ USAGE MONTH 1 (M1 = 2025-09) ------------------------ */
+    LEFT JOIN
+    (
         SELECT
             Subscription_Id,
-            Session_Dttm,
-            /* MB formula */
-            (
+            SUM(
                 COALESCE(
-                    CASE WHEN COALESCE(bytes_out,0) < 0
-                         THEN ((down_turns*4294967295.00)
-                              + (4294967295.00 + COALESCE(bytes_out,0))) / 1048576.00 END,0)
+                    CASE
+                        WHEN COALESCE(bytes_out, 0) < 0
+                            THEN (((down_turns * 4294967295.00)
+                                  + (4294967295.00 + COALESCE(bytes_out,0))) / 1048576.00)
+                    END, 0)
               + COALESCE(
-                    CASE WHEN bytes_out > 0
-                         THEN ((down_turns*4294967295.00)
-                              + COALESCE(bytes_out,0)) / 1048576.00 END,0)
+                    CASE
+                        WHEN bytes_out > 0
+                            THEN (((down_turns * 4294967295.00)
+                                  + COALESCE(bytes_out,0)) / 1048576.00)
+                    END, 0)
               + COALESCE(
-                    CASE WHEN COALESCE(bytes_in,0) < 0
-                         THEN ((up_turns*4294967295.00)
-                              + (4294967295.00 + COALESCE(bytes_in,0))) / 1048576.00 END,0)
+                    CASE
+                        WHEN COALESCE(bytes_in,0) < 0
+                            THEN (((up_turns * 4294967295.00)
+                                  + (4294967295.00 + COALESCE(bytes_in,0))) / 1048576.00)
+                    END, 0)
               + COALESCE(
-                    CASE WHEN bytes_in > 0
-                         THEN ((up_turns*4294967295.00)
-                              + COALESCE(bytes_in,0)) / 1048576.00 END,0)
-            ) AS MBs
+                    CASE
+                        WHEN bytes_in > 0
+                            THEN (((up_turns * 4294967295.00)
+                                  + COALESCE(bytes_in,0)) / 1048576.00)
+                    END, 0)
+            ) AS Total_MBs_M1
         FROM VDB.ISP_RADIUS_ACTIVITY
-        WHERE CAST(Session_Dttm AS DATE) BETWEEN DATE - 60 AND DATE - 1
-    ),
+        WHERE EXTRACT(YEAR  FROM Session_Dttm) = 2025
+          AND EXTRACT(MONTH FROM Session_Dttm) = 9       -- September
+        GROUP BY 1
+    ) usage_m1
+      ON usage_m1.Subscription_Id = ab.Subscription_Id
 
-    usage_agg AS (
+    /* ------------ USAGE MONTH 2 (M2 = 2025-10) ------------------------ */
+    LEFT JOIN
+    (
         SELECT
-            b.Subscription_Id,
-
-            /* M1: last 30 days */
+            Subscription_Id,
             SUM(
-                CASE WHEN CAST(u.Session_Dttm AS DATE)
-                           BETWEEN DATE - 30 AND DATE - 1
-                     THEN u.MBs ELSE 0 END
-            ) AS Total_MBs_M1,
-
-            /* M2: previous 30 days */
-            SUM(
-                CASE WHEN CAST(u.Session_Dttm AS DATE)
-                           BETWEEN DATE - 60 AND DATE - 31
-                     THEN u.MBs ELSE 0 END
+                COALESCE(
+                    CASE
+                        WHEN COALESCE(bytes_out, 0) < 0
+                            THEN (((down_turns * 4294967295.00)
+                                  + (4294967295.00 + COALESCE(bytes_out,0))) / 1048576.00)
+                    END, 0)
+              + COALESCE(
+                    CASE
+                        WHEN bytes_out > 0
+                            THEN (((down_turns * 4294967295.00)
+                                  + COALESCE(bytes_out,0)) / 1048576.00)
+                    END, 0)
+              + COALESCE(
+                    CASE
+                        WHEN COALESCE(bytes_in,0) < 0
+                            THEN (((up_turns * 4294967295.00)
+                                  + (4294967295.00 + COALESCE(bytes_in,0))) / 1048576.00)
+                    END, 0)
+              + COALESCE(
+                    CASE
+                        WHEN bytes_in > 0
+                            THEN (((up_turns * 4294967295.00)
+                                  + COALESCE(bytes_in,0)) / 1048576.00)
+                    END, 0)
             ) AS Total_MBs_M2
-
-        FROM base b
-        LEFT JOIN usg_win u
-            ON u.Subscription_Id = b.Subscription_Id
+        FROM VDB.ISP_RADIUS_ACTIVITY
+        WHERE EXTRACT(YEAR  FROM Session_Dttm) = 2025
+          AND EXTRACT(MONTH FROM Session_Dttm) = 10      -- October
         GROUP BY 1
-    ),
+    ) usage_m2
+      ON usage_m2.Subscription_Id = ab.Subscription_Id
 
-    /*==================== 3) QUOTA (UT balance) ====================*/
-    quota_agg AS (
+    /* ------------ QUOTA MONTH 1 (M1 = 2025-09) ------------------------ */
+    LEFT JOIN
+    (
         SELECT
-            b.Subscription_Id,
-
-            /* M1 quota */
-            MAX(
-                CASE WHEN s.Profile_Dt BETWEEN DATE - 30 AND DATE - 1
-                     THEN ZEROIFNULL(s.UT_Balance)/1024.0/1024.0
-                     ELSE 0 END
-            ) AS Granted_MBs_M1,
-
-            /* M2 quota */
-            MAX(
-                CASE WHEN s.Profile_Dt BETWEEN DATE - 60 AND DATE - 31
-                     THEN ZEROIFNULL(s.UT_Balance)/1024.0/1024.0
-                     ELSE 0 END
-            ) AS Granted_MBs_M2
-
-        FROM base b
-        LEFT JOIN vdb.SUBSCRIPTION_PROFILE_UT_HIST s
-            ON s.Subscription_Id = b.Subscription_Id
-           AND s.ut_id = 98201
-           AND s.Profile_Dt BETWEEN DATE - 60 AND DATE - 1
+            Subscription_Id,
+            MAX(ZEROIFNULL(UT_Balance / 1024.0 / 1024.0)) AS Granted_MBs_M1
+        FROM vdb.SUBSCRIPTION_PROFILE_UT_HIST
+        WHERE ut_id = 98201
+          AND Profile_Dt BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
         GROUP BY 1
-    ),
+    ) quota_m1
+      ON quota_m1.Subscription_Id = ab.Subscription_Id
 
-    /*==================== 4) ADDONS (billing) ====================*/
-    addons_agg AS (
+    /* ------------ QUOTA MONTH 2 (M2 = 2024-10) ------------------------ */
+    LEFT JOIN
+    (
+        SELECT
+            Subscription_Id,
+            MAX(ZEROIFNULL(UT_Balance / 1024.0 / 1024.0)) AS Granted_MBs_M2
+        FROM vdb.SUBSCRIPTION_PROFILE_UT_HIST
+        WHERE ut_id = 98201
+          AND Profile_Dt BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+        GROUP BY 1
+    ) quota_m2
+      ON quota_m2.Subscription_Id = ab.Subscription_Id
+
+    /* ------------ ADDONS MONTH 1 (M1 = 2025-09) ---------------------- */
+    LEFT JOIN
+    (
         SELECT
             bs.Account_Id,
-
-            /* M1 addons */
-            SUM(
-                CASE WHEN bsd.Transaction_Dt BETWEEN DATE - 30 AND DATE - 1
-                     AND s.Service_Name LIKE '%ADRO%' THEN bsd.Transaction_Amt END
-            ) AS Addons_M1,
-            SUM(
-                CASE WHEN bsd.Transaction_Dt BETWEEN DATE - 30 AND DATE - 1
-                     AND s.Service_Name LIKE '%ADER%' THEN bsd.Transaction_Amt END
-            ) AS Renew_M1,
-
-            /* M2 addons */
-            SUM(
-                CASE WHEN bsd.Transaction_Dt BETWEEN DATE - 60 AND DATE - 31
-                     AND s.Service_Name LIKE '%ADRO%' THEN bsd.Transaction_Amt END
-            ) AS Addons_M2,
-            SUM(
-                CASE WHEN bsd.Transaction_Dt BETWEEN DATE - 60 AND DATE - 31
-                     AND s.Service_Name LIKE '%ADER%' THEN bsd.Transaction_Amt END
-            ) AS Renew_M2
-
-        FROM base b
-        JOIN vdb.BILLING_STATEMENT bs
-            ON bs.Account_Id = b.Main_Account_Num
-        JOIN vdb.BILLING_STATEMENT_DETAIL bsd
-            ON bsd.Bill_Stmt_Ref = bs.Bill_Stmt_Ref
-        JOIN vdb.Service s
-            ON s.Service_Product_Id = bsd.Service_Product_Id
-        WHERE bsd.Transaction_Dt BETWEEN DATE - 60 AND DATE - 1
-          AND bs.Bill_Stmt_Dt  BETWEEN DATE - 60 AND DATE - 1
+            SUM(CASE WHEN s.Service_Name LIKE '%ADRO%' THEN bsd.Transaction_Amt END) AS Addons_M1,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADER%' THEN bsd.Transaction_Amt END) AS Renew_M1
+        FROM  vdb.BILLING_STATEMENT bs
+        JOIN  vdb.BILLING_STATEMENT_DETAIL bsd
+              ON bsd.Bill_Stmt_Ref = bs.Bill_Stmt_Ref
+        JOIN  vdb.Service s
+              ON s.Service_Product_Id = bsd.Service_Product_Id
+        WHERE bs.Bill_Stmt_Dt  BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
+          AND bsd.Transaction_Dt BETWEEN DATE '2025-09-01' AND DATE '2025-09-30'
           AND bs.Billing_Type_Cd IN ('1','2','3','4')
           AND bs.Invoice_Type_Cd IN ('1','5')
         GROUP BY 1
-    ),
+    ) add_m1
+      ON add_m1.Account_Id = ab.Main_Account_Num
 
-    /*==================== 5) DIGITAL FLAG ====================*/
-    dig AS (
+    /* ------------ ADDONS MONTH 2 (M2 = 2025-10) ---------------------- */
+    LEFT JOIN
+    (
+        SELECT
+            bs.Account_Id,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADRO%' THEN bsd.Transaction_Amt END) AS Addons_M2,
+            SUM(CASE WHEN s.Service_Name LIKE '%ADER%' THEN bsd.Transaction_Amt END) AS Renew_M2
+        FROM  vdb.BILLING_STATEMENT bs
+        JOIN  vdb.BILLING_STATEMENT_DETAIL bsd
+              ON bsd.Bill_Stmt_Ref = bs.Bill_Stmt_Ref
+        JOIN  vdb.Service s
+              ON s.Service_Product_Id = bsd.Service_Product_Id
+        WHERE bs.Bill_Stmt_Dt  BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+          AND bsd.Transaction_Dt BETWEEN DATE '2025-10-01' AND DATE '2025-10-31'
+          AND bs.Billing_Type_Cd IN ('1','2','3','4')
+          AND bs.Invoice_Type_Cd IN ('1','5')
+        GROUP BY 1
+    ) add_m2
+      ON add_m2.Account_Id = ab.Main_Account_Num
+
+    /* ------------ DIGITAL FLAG in either of the 2 months -------------- */
+    LEFT JOIN
+    (
         SELECT
             Subscription_Id,
             MAX('Y') AS Digital_User_Flag
         FROM VDB.SuperApp_Datamart_Base_Daily
-        WHERE Trx_Date BETWEEN DATE - 60 AND DATE - 1
+        WHERE Trx_Date BETWEEN DATE '2025-09-01' AND DATE '2025-10-31'
         GROUP BY 1
-    )
+    ) dig
+      ON dig.Subscription_Id = ab.Subscription_Id
 
-    /*==================== 6) FINAL OUTPUT ====================*/
-    SELECT
-        b.Subscription_Id,
-        b.Rate_Plan_Group,
-        b.Rate_Plan_Category,
-        b.Rate_Plan_Desc,
-        b.rate_plan_class,
-        b.Tenure_Days,
-        b.DSL_Over_Fixed_Flag,
+    /* ===================== FINAL FILTERS ======================= */
+    QUALIFY
+        /* 100% full utilizer in BOTH months */
+        quota_m1.Granted_MBs_M1 > 0
+    AND quota_m2.Granted_MBs_M2 > 0
+    AND usage_m1.Total_MBs_M1 >= quota_m1.Granted_MBs_M1
+    AND usage_m2.Total_MBs_M2 >= quota_m2.Granted_MBs_M2
 
-        /* usage */
-        ZEROIFNULL(u.Total_MBs_M1)   AS Total_MBs_M1,
-        ZEROIFNULL(u.Total_MBs_M2)   AS Total_MBs_M2,
-
-        /* quota */
-        ZEROIFNULL(q.Granted_MBs_M1) AS Granted_MBs_M1,
-        ZEROIFNULL(q.Granted_MBs_M2) AS Granted_MBs_M2,
-
-        /* digital */
-        COALESCE(d.Digital_User_Flag,'N') AS Digital_User_Flag
-
-    FROM base b
-    LEFT JOIN usage_agg  u  ON u.Subscription_Id = b.Subscription_Id
-    LEFT JOIN quota_agg  q  ON q.Subscription_Id = b.Subscription_Id
-    LEFT JOIN addons_agg ad ON ad.Account_Id     = b.Main_Account_Num
-    LEFT JOIN dig        d  ON d.Subscription_Id = b.Subscription_Id
-
-    /*==================== CRITERIA ====================*/
-    WHERE
-        /* Must have quota in both months */
-        q.Granted_MBs_M1 > 0
-        AND q.Granted_MBs_M2 > 0
-
-        /* Full utilizer 100% in M1 and M2 */
-        AND u.Total_MBs_M1 >= q.Granted_MBs_M1
-        AND u.Total_MBs_M2 >= q.Granted_MBs_M2
-
-        /* NO addons / renewable addons in M1 and M2 */
-        AND COALESCE(ad.Addons_M1,0) = 0
-        AND COALESCE(ad.Renew_M1,0)  = 0
-        AND COALESCE(ad.Addons_M2,0) = 0
-        AND COALESCE(ad.Renew_M2,0)  = 0
+    /* No addons in BOTH months */
+    AND COALESCE(add_m1.Addons_M1, 0) = 0
+    AND COALESCE(add_m1.Renew_M1, 0) = 0
+    AND COALESCE(add_m2.Addons_M2, 0) = 0
+    AND COALESCE(add_m2.Renew_M2, 0) = 0
 
 )
 WITH DATA
