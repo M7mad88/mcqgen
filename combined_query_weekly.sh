@@ -1,0 +1,58 @@
+
+#!/bin/bash
+
+# ========================================================================
+# Script: combined_query_weekly.sh
+# Purpose: Run medium-term (7-day) OIM model weekly or in recovery mode
+# Usage:
+#   Default run: ./combined_query_weekly.sh
+#   Recovery run: ./combined_query_weekly.sh "YYYY-MM-DD"
+# ========================================================================
+
+PYTHON_SCRIPT="/home/cadmin/Scripts/Analytics_Scripts/OIM_Short_Mid/combined_query_weekly.py"
+LOG_FILE="/home/cadmin/Scripts/Analytics_Scripts/OIM_Short_Mid/Medium_Term.log"
+
+SPARK_SUBMIT_ARGS="--num-executors 8 \
+  --executor-memory 12g \
+  --executor-cores 5 \
+  --driver-memory 8g \
+  --conf spark.executor.memoryOverhead=2048 \
+  --conf spark.sql.shuffle.partitions=200 \
+  --conf spark.dynamicAllocation.enabled=false \
+  --queue root.users.cadmin"
+
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
+# Rotate log file
+mv "$LOG_FILE" "${LOG_FILE}.$(date +'%Y%m%d%H%M%S')" 2>/dev/null
+
+if [ $# -eq 0 ]; then
+    log_message "Starting medium-term OIM weekly run for today (append mode)"
+elif [ $# -eq 1 ]; then
+    recovery_date="$1"
+    if ! date -d "$recovery_date" >/dev/null 2>&1; then
+        log_message "ERROR: Invalid date format: $recovery_date. Use YYYY-MM-DD."
+        exit 1
+    fi
+    log_message "Starting recovery run for date: $recovery_date (overwrite mode)"
+else
+    log_message "ERROR: Invalid number of arguments. Usage: $0 [YYYY-MM-DD]"
+    exit 1
+fi
+
+spark_args=()
+if [ $# -eq 1 ]; then
+    spark_args=("$recovery_date")
+fi
+
+log_message "Submitting Spark job..."
+spark-submit $SPARK_SUBMIT_ARGS "$PYTHON_SCRIPT" "${spark_args[@]}" >> "$LOG_FILE" 2>&1
+
+if [ $? -eq 0 ]; then
+    log_message "Medium-term OIM job completed successfully."
+else
+    log_message "ERROR: Medium-term OIM job failed. Check logs for details."
+    exit 1
+fi

@@ -1,0 +1,147 @@
+#!/usr/bin/env python
+import sys
+import logging
+from datetime import datetime, timedelta
+from pyspark.sql import SparkSession
+
+logging.basicConfig(
+    filename="/home/cadmin/Scripts/Analytics_Scripts/OIM_Short_Mid/Medium_Term_Py.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+def main():
+    try:
+        spark = SparkSession.builder \
+            .appName("Online_Model_Medium_Term") \
+            .config("spark.sql.caseSensitive", "false") \
+            .config("hive.exec.dynamic.partition", "true") \
+            .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+            .enableHiveSupport() \
+            .getOrCreate()
+
+        # Determine run date and type
+        if len(sys.argv) == 1:
+            run_date_dt = datetime.now().date()
+            run_type = "default"
+        elif len(sys.argv) == 2:
+            try:
+                run_date_dt = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
+                run_type = "recovery"
+            except ValueError:
+                logger.error("Invalid date format. Use YYYY-MM-DD.")
+                spark.stop()
+                sys.exit(1)
+        else:
+            logger.error("Usage: python combined_query_weekly.py [YYYY-MM-DD]")
+            spark.stop()
+            sys.exit(1)
+
+        # 7-day window ending on run_date
+        mt_from_date = (run_date_dt - timedelta(days=6)).strftime("%Y-%m-%d")
+        mt_to_date = run_date_dt.strftime("%Y-%m-%d")
+
+        logger.info("Starting %s medium-term run for %s to %s", run_type, mt_from_date, mt_to_date)
+
+        target_table = "analytics_prod.oim_medium_term_raw"
+
+        # Base union query
+        base_query = """
+SELECT subscription_id,
+       app_name,
+       lower(app_category) AS app_category,
+       CAST(SUM(CAST(mbs AS decimal(18,6))) AS STRING) AS total_mbs,
+       CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+       COUNT(DISTINCT day) AS access_days,
+       'app' AS type,
+       '{to_date}' AS day
+FROM analytics_prod.online_interest_protocols_daily
+WHERE day BETWEEN '{from_date}' AND '{to_date}'
+GROUP BY subscription_id, app_name, app_category
+
+UNION ALL
+
+SELECT subscription_id,
+       app_name,
+       lower(app_category) AS app_category,
+       '0' AS total_mbs,
+       CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+       COUNT(DISTINCT day) AS access_days,
+       'url' AS type,
+       '{to_date}' AS day
+FROM analytics_prod.online_interest_urls_daily
+WHERE day BETWEEN '{from_date}' AND '{to_date}'
+GROUP BY subscription_id, app_name, app_category
+
+UNION ALL
+
+SELECT subscription_id,
+       app_name,
+       lower(app_category) AS app_category,
+       '0' AS total_mbs,
+       CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+       COUNT(DISTINCT day) AS access_days,
+       'sms' AS type,
+       '{to_date}' AS day
+FROM analytics_prod.online_interest_sms_daily
+WHERE day BETWEEN '{from_date}' AND '{to_date}'
+GROUP BY subscription_id, app_name, app_category
+
+UNION ALL
+
+SELECT subscription_id,
+       app_name,
+       lower(app_category) AS app_category,
+       '0' AS total_mbs,
+       CAST(SUM(no_of_sessions) AS INT) AS total_sessions,
+       COUNT(DISTINCT day) AS access_days,
+       'og' AS type,
+       '{to_date}' AS day
+FROM analytics_prod.online_interest_og_calls_daily
+WHERE day BETWEEN '{from_date}' AND '{to_date}'
+GROUP BY subscription_id, app_name, app_category
+""".format(from_date=mt_from_date, to_date=mt_to_date)
+
+        # Choose INSERT mode based on run type
+        if run_type == "recovery":
+            insert_sql = """
+INSERT OVERWRITE TABLE {target_table} PARTITION (dt = '{to_date}')
+SELECT subscription_id,
+       app_name,
+       app_category,
+       total_mbs,
+       total_sessions,
+       access_days,
+       type,
+       day
+FROM ({subquery}) base
+""".format(target_table=target_table, to_date=mt_to_date, subquery=base_query)
+            logger.info("Using OVERWRITE mode for recovery on partition dt=%s", mt_to_date)
+        else:
+            insert_sql = """
+INSERT INTO TABLE {target_table} PARTITION (dt = '{to_date}')
+SELECT subscription_id,
+       app_name,
+       app_category,
+       total_mbs,
+       total_sessions,
+       access_days,
+       type,
+       day
+FROM ({subquery}) base
+""".format(target_table=target_table, to_date=mt_to_date, subquery=base_query)
+            logger.info("Using APPEND mode for daily run on partition dt=%s", mt_to_date)
+
+        logger.info("Executing insert into %s for dt=%s...", target_table, mt_to_date)
+        spark.sql(insert_sql)
+        logger.info("✅ Successfully completed medium-term job for dt=%s (mode: %s).", mt_to_date, run_type)
+
+    except Exception as e:
+        logger.error("Medium-term job failed: %s", str(e), exc_info=True)
+        raise
+    finally:
+        spark.stop()
+
+if __name__ == "__main__":
+    main()
