@@ -1,0 +1,170 @@
+
+CREATE MULTISET TABLE twm_RESULT.Corporate_Groups_Base_MHR AS (
+
+SEL
+DSI.Subscription_Id
+, RP.Rate_Plan_Group
+, RP.Rate_Plan_Category
+, CBSF.XNET_Base_Segmentation
+
+/* --- Total Recharge Amount Tier (Nov 2025) --- */
+, CASE 
+WHEN ZeroIfNull(Total_Recharge) = 0 THEN '0'
+WHEN ZeroIfNull(Total_Recharge) BETWEEN 1 AND 10 THEN '1--10'
+WHEN ZeroIfNull(Total_Recharge) BETWEEN 10 AND 30 THEN '10--30'
+WHEN ZeroIfNull(Total_Recharge) BETWEEN 30 AND 50 THEN '30--50'
+ELSE '50++'
+END AS Total_Recharge_Tier
+
+/* ---- Decile (only 1..10 allowed) ---- */
+, CASE 
+WHEN RP.Rate_Plan_Category = 'PostPaid' AND CRMP.Decile BETWEEN 1 AND 10 THEN CRMP.Decile
+WHEN RP.Rate_Plan_Category = 'PrePaid' AND CPRP.Decile BETWEEN 1 AND 10 THEN CPRP.Decile
+ELSE NULL
+END AS Corporate_Decile
+
+FROM VDB.DETAILED_SUBSCRIPTION_INFO DSI
+LEFT JOIN VDB.rate_plan RP 
+ON RP.Rate_Plan_Product_Id = DSI.Rate_Plan_Product_Id
+LEFT JOIN VDB.Corp_Base_Segmentation_Final CBSF 
+ON CBSF.Subscription_Id = DSI.Subscription_Id
+
+/* --- Prepaid Decile --- */
+LEFT JOIN (
+SEL Subscription_Id, Decile
+FROM VDB.Corp_Pre_Recharge_Propensity
+WHERE Running_Date = DATE - 1
+) CPRP
+ON CPRP.Subscription_Id = DSI.Subscription_Id
+
+/* --- Postpaid Decile --- */
+LEFT JOIN (
+SEL Subscription_Id, Decile
+FROM VDB.Corporate_Recharge_Model_Propensity
+WHERE Running_Date = DATE - 1
+) CRMP
+ON CRMP.Subscription_Id = DSI.Subscription_Id
+
+/* --- Recharge Amount for November 2025 --- */
+LEFT JOIN (
+SEL 
+Subscription_Id,
+Sum(Recharge_amt) AS Total_Recharge
+FROM VDB.CVM_Recharge_Daily
+WHERE Payment_Date BETWEEN DATE '2025-11-01' AND DATE '2025-11-30'
+GROUP BY 1
+) RCH
+ON RCH.Subscription_Id = DSI.Subscription_Id
+
+WHERE 1 = 1
+AND DSI.Subscription_Status_Group_Cd NOT IN (-1, 4)
+AND RP.Rate_Plan_Group = 'Business'
+GROUP BY 1,2,3,4,5,6
+
+) WITH DATA PRIMARY INDEX (Subscription_Id);
+--===================================================================
+--===================================================================
+SEL * FROM twm_RESULT.Corporate_Groups_Base_MHR;
+--===================================================================
+--===================================================================
+--===========================================================
+-- 2. STRATIFICATION (Revenue, RCH Amount, RCH Frequency)
+--===========================================================
+-- Drop table twm_result.RCH_Corp_MHR;
+CREATE MULTISET TABLE twm_result.RCH_Corp_MHR AS (
+
+WITH base AS (
+
+SEL
+bs.Subscription_Id
+, bs.Rate_Plan_Group
+, bs.Rate_Plan_Category
+
+/* --- Convert segmentation 1/2/3 to labels --- */
+, CASE 
+WHEN bs.XNET_Base_Segmentation = 1 THEN 'Seg_1'
+WHEN bs.XNET_Base_Segmentation = 2 THEN 'Seg_2'
+WHEN bs.XNET_Base_Segmentation = 3 THEN 'Seg_3'
+END AS Base_Segmentation
+
+, bs.Total_Recharge_Tier
+, bs.Corporate_Decile
+
+FROM twm_RESULT.Corporate_Groups_Base_MHR bs
+WHERE 1=1
+AND bs.XNET_Base_Segmentation IN (1,2,3)
+AND bs.Corporate_Decile BETWEEN 1 AND 10 -- STRICT per email criteria
+)
+
+SELECT
+bs.Subscription_Id
+, bs.Base_Segmentation
+, bs.Total_Recharge_Tier
+, bs.Corporate_Decile
+
+/* --- Recharge platform redemption flag --- */
+, Coalesce(CECM.Rech_Plat_Redem_Flag,'N') AS Rech_Plat_Redem_Flag
+
+/* --- Revenue for M3/M2/M1 (last 90 days) --- */
+, Sum(CASE WHEN ASRM.Revenue_Date BETWEEN DATE '2025-09-01' AND DATE '2025-09-30' 
+THEN ASRM.Total_Revenue - ASRM.Bill_Amount END) AS M3_Total_Rev
+
+, Sum(CASE WHEN ASRM.Revenue_Date BETWEEN DATE '2025-10-01' AND DATE '2025-10-31' 
+THEN ASRM.Total_Revenue - ASRM.Bill_Amount END) AS M2_Total_Rev
+
+, Sum(CASE WHEN ASRM.Revenue_Date BETWEEN DATE '2025-11-01' AND DATE '2025-11-30' 
+THEN ASRM.Total_Revenue - ASRM.Bill_Amount END) AS M1_Total_Rev
+
+/* --- Total Recharge Amount Last 90 Days --- */
+, Sum(RCH90.Recharge_Amt) AS Total_RCH_90D
+
+/* --- Recharge COUNT last 90 days --- */
+, Count(RCH90.Recharge_Amt) AS RCH_Freq_90D
+, CASE WHEN _AB.Subscription_Id IS NULL AND _MCG.UCG_Flag IN (5,7) THEN 1 ELSE 0 END AS should_be_selected
+
+FROM base bs
+
+/* --- Revenue --- */
+LEFT JOIN VDB.AGG_SUBS_REVENUE_MONTHLY ASRM
+ON ASRM.Subscription_Id = bs.Subscription_Id
+AND ASRM.Revenue_Date BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+
+/* --- Redemption --- */
+LEFT JOIN (
+SEL Subscription_id, Rech_Plat_Redem_Flag
+FROM VDB.cvm_engagement_Corporate_monthly
+WHERE Cal_Month = 11 AND Cal_Year = 2025
+) CECM
+ON CECM.Subscription_id = bs.Subscription_Id
+
+/* --- Recharge last 90 days (Sep+Oct+Nov 2025) --- */
+LEFT JOIN (
+SEL Subscription_Id, Recharge_Amt
+FROM VDB.CVM_Recharge_Daily
+WHERE Payment_Date BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+) RCH90
+ON RCH90.Subscription_Id = bs.Subscription_Id
+
+GROUP BY 1,2,3,4,5
+
+) WITH DATA PRIMARY INDEX (Subscription_Id);
+--========================================================
+--=========================================================
+---=====================================================
+--SIZING
+SEL
+'before excluding' base
+,Count(Subscription_Id) AS No_of_Subs
+, Sum(M1_Total_Rev) AS M1_Total_Rev
+, Sum(M2_Total_Rev) AS M2_Total_Rev
+, Sum(M3_Total_Rev) AS M3_Total_Rev
+FROM twm_result.RCH_Corp_MHR
+UNION ALL
+SEL
+'after excluding' base
+,Count(Subscription_Id) AS No_of_Subs
+, Sum(M1_Total_Rev) AS M1_Total_Rev
+, Sum(M2_Total_Rev) AS M2_Total_Rev
+, Sum(M3_Total_Rev) AS M3_Total_Rev
+FROM twm_result.RCH_Corp_MHR
+WHERE should_be_selected = 1;
