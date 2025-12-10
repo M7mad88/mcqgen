@@ -1,0 +1,198 @@
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.providers.ssh.operators.ssh import SSHOperator
+from airflow.providers.ssh.hooks.ssh import SSHHook
+from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.models import Variable
+from airflow.utils.trigger_rule import TriggerRule
+import trino
+from datetime import datetime, timedelta
+import pendulum
+import base64
+
+
+# -----------------------------
+# Connections & Parameters
+# -----------------------------
+ssh_conn_id = 'Adel_CDP'
+connection_ids = ['Adel_CDP']
+ds_conn_id='SSH_Datastage_96'
+
+
+processing_date = datetime.now().strftime("%Y-%m-%d")
+previous_day = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+DLStage = Variable.get("DLStage")
+StarburstUser = "mohamed.ahramadan"
+StarburstPassword = "@Arsenal_1988"
+
+# -----------------------------
+# Functions
+# -----------------------------
+def get_trino_cursor():
+    conn = trino.dbapi.connect(
+        host='10.208.244.104',
+        http_scheme="https",
+        verify=False,
+        port=8082,
+        user='datalake',
+        catalog='hive',
+        auth=trino.auth.BasicAuthentication(StarburstUser, StarburstPassword),
+        roles={"system": "ROLE{generic_role}"}
+    )
+    #cursor = conn.cursor()
+    #sql = """ insert into cloudera_test.table ...."""
+    #cursor.execute(sql)
+    return conn.cursor()
+
+def run_ds_short_Job(**kwargs):
+    conn=ds_conn_id
+    dag_run = kwargs.get('dag_run')
+    conf = dag_run.conf if dag_run else {}
+    processing_date =  conf.get("processing_date")
+    ds_project='Analytics'
+    ds_job='S_000_Oim_Short_Term'
+    s_command= f'cd /ds9/IBM/InformationServer/Server/DSEngine; . ./dsenv;  bin/dsjob  -run -param Running_Date={processing_date} -jobstatus {ds_project} {ds_job}'
+    ssh_hook = SSHHook(ssh_conn_id=conn)
+    ssh_client = ssh_hook.get_conn()
+    ssh_client.load_system_host_keys()
+    stdin, stdout, stderr = ssh_client.exec_command(s_command)
+    ds_output= stdout.read().decode('utf-8').strip()
+    ds_error= stderr.read().decode('utf-8').strip()
+    ds_error=ds_error[ds_error.find('Status code')+len('Status code = '):]
+    
+    if ds_error== '0':
+        print(f"Job finished successfully")
+    elif ds_error=='1':
+        print(f"Job finished successfully with warnings")
+    elif ds_error !='1' or ds_error!='0':
+        raise Exception(f"Error Runing the job: {ds_error}")
+    else:
+        print(f"Ds Job Output: {ds_output}")
+        
+def run_ds_medium_Job(**kwargs):
+    conn=ds_conn_id
+    dag_run = kwargs.get('dag_run')
+    conf = dag_run.conf if dag_run else {}
+    processing_date =  conf.get("processing_date")
+    ds_project='Analytics'
+    ds_job='S_000_Oim_Medium_Term'
+    s_command= f'cd /ds9/IBM/InformationServer/Server/DSEngine; . ./dsenv;  bin/dsjob  -run -param Running_Date={processing_date} -jobstatus {ds_project} {ds_job}'
+    ssh_hook = SSHHook(ssh_conn_id=conn)
+    ssh_client = ssh_hook.get_conn()
+    ssh_client.load_system_host_keys()
+    stdin, stdout, stderr = ssh_client.exec_command(s_command)
+    ds_output= stdout.read().decode('utf-8').strip()
+    ds_error= stderr.read().decode('utf-8').strip()
+    ds_error=ds_error[ds_error.find('Status code')+len('Status code = '):]
+    
+    if ds_error== '0':
+        print(f"Job finished successfully")
+    elif ds_error=='1':
+        print(f"Job finished successfully with warnings")
+    elif ds_error !='1' or ds_error!='0':
+        raise Exception(f"Error Runing the job: {ds_error}")
+    else:
+        print(f"Ds Job Output: {ds_output}")
+
+def test_ssh_connections(**kwargs):
+    global ssh_conn_id
+    for conn_id in connection_ids:
+        try:
+            ssh_hook = SSHHook(ssh_conn_id=conn_id)
+            ssh_client = ssh_hook.get_conn()
+            ssh_client.load_system_host_keys()
+            stdin, stdout, stderr = ssh_client.exec_command("echo test")
+            output = stdout.read().decode().strip()
+            if "test" not in output:
+                raise Exception("Unexpected output from SSH command")
+            print(f"Successfully connected with {conn_id}")
+            ssh_conn_id = conn_id
+            return conn_id
+        except Exception as e:
+            print(f"Failed to connect with {conn_id}: {e}")
+            ssh_conn_id = None
+    return None
+
+def set_failed_task(**kwargs):
+    ti = kwargs['ti']
+    dag_run = ti.get_dagrun()
+    task_instances = dag_run.get_task_instances()
+
+    output = []
+    has_failed_tasks = False
+
+    for task in task_instances:
+        state = task.state or 'none'
+        if state == 'failed':
+            output.append(f"{task.task_id.split('.')[-1]} => {state.capitalize()}")
+            has_failed_tasks = True
+
+    if has_failed_tasks:
+        output_str = "\n".join(output)
+        print(output_str)
+        encoded_message = base64.b64encode(output_str.encode()).decode()
+        ti.xcom_push(key='alarm_message', value=encoded_message)
+
+# -----------------------------
+# DAG Definition
+# -----------------------------
+with DAG(
+    dag_id='oim_short_medium_terms',
+    description="get customer's online interest  for last 3 and 7 days",
+    schedule_interval='00 22 * * *',   
+    start_date=pendulum.datetime(2025, 1, 1, tz="UTC"),  
+    dagrun_timeout=timedelta(minutes=1000),
+    catchup=False,
+    tags=["oim_short_medium_terms"]
+) as dag:
+    
+    start = DummyOperator(task_id="start")
+
+    SSH_Connections_Task = PythonOperator(
+        task_id='test_ssh_connections',
+        python_callable=test_ssh_connections
+    )
+    combined_daily = SSHOperator(
+        task_id='combined_daily',
+        ssh_conn_id=ssh_conn_id,  
+        command='bash "/data/U_MHR/oim/combined_query_daily.sh"',
+        retries=2,
+        conn_timeout=22200,
+        cmd_timeout=22200,
+        retry_delay=timedelta(seconds=5),
+        do_xcom_push=True
+    )
+    combined_weekly = SSHOperator(
+        task_id='combined_weekly',
+        ssh_conn_id=ssh_conn_id,  
+        command='bash "/data/U_MHR/oim/combined_query_weekly.sh"',
+        retries=2,
+        conn_timeout=22200,
+        cmd_timeout=22200,
+        retry_delay=timedelta(seconds=5),
+        do_xcom_push=True
+    )
+    run_datastage_short = PythonOperator(
+        task_id='run_datastage_short',
+        python_callable= run_ds_short_Job,
+        provide_context = True
+    )
+    
+    run_datastage_medium = PythonOperator(
+        task_id='run_datastage_medium',
+        python_callable= run_ds_medium_Job,
+        provide_context = True
+    )
+    Detect_Failure = PythonOperator(
+        task_id='Detect_Failure',
+        python_callable=set_failed_task,
+        trigger_rule=TriggerRule.ALL_DONE
+    )
+    
+    # Task Dependencies
+    start >> SSH_Connections_Task >> [combined_daily,combined_weekly] 
+    [combined_daily,combined_weekly] >> run_datastage_short # both combined tasks must finish before each DS job
+    [combined_daily,combined_weekly] >> run_datastage_medium
+    [run_datastage_short,run_datastage_medium] >> Detect_Failure
