@@ -1,0 +1,244 @@
+2025-12-11 14:59:24 - Starting medium-term OIM weekly run for today (append mode)
+2025-12-11 14:59:24 - Submitting Spark job...
+25/12/11 14:59:25 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+25/12/11 14:59:26 INFO SparkContext: Running Spark version 3.0.2
+25/12/11 14:59:26 INFO ResourceUtils: ==============================================================
+25/12/11 14:59:26 INFO ResourceUtils: Resources for spark.driver:
+
+25/12/11 14:59:26 INFO ResourceUtils: ==============================================================
+25/12/11 14:59:26 INFO SparkContext: Submitted application: Online_Model_Medium_Term
+25/12/11 14:59:26 INFO SecurityManager: Changing view acls to: U_MHR
+25/12/11 14:59:26 INFO SecurityManager: Changing modify acls to: U_MHR
+25/12/11 14:59:26 INFO SecurityManager: Changing view acls groups to: 
+25/12/11 14:59:26 INFO SecurityManager: Changing modify acls groups to: 
+25/12/11 14:59:26 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(U_MHR); groups with view permissions: Set(); users  with modify permissions: Set(U_MHR); groups with modify permissions: Set()
+25/12/11 14:59:26 INFO Utils: Successfully started service 'sparkDriver' on port 39919.
+25/12/11 14:59:26 INFO SparkEnv: Registering MapOutputTracker
+25/12/11 14:59:26 INFO SparkEnv: Registering BlockManagerMaster
+25/12/11 14:59:26 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+25/12/11 14:59:26 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+25/12/11 14:59:26 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+25/12/11 14:59:26 INFO DiskBlockManager: Created local directory at /tmp/blockmgr-d76e584b-e011-49f2-9241-d046c7753bec
+25/12/11 14:59:26 INFO MemoryStore: MemoryStore started with capacity 912.3 MiB
+25/12/11 14:59:26 INFO SparkEnv: Registering OutputCommitCoordinator
+25/12/11 14:59:27 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+25/12/11 14:59:27 INFO SparkUI: Bound SparkUI to 0.0.0.0, and started at http://csvapcvm05.eg01.etisalat.net:4040
+25/12/11 14:59:27 INFO Executor: Starting executor ID driver on host csvapcvm05.eg01.etisalat.net
+25/12/11 14:59:27 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 35950.
+25/12/11 14:59:27 INFO NettyBlockTransferService: Server created on csvapcvm05.eg01.etisalat.net:35950
+25/12/11 14:59:27 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+25/12/11 14:59:27 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, csvapcvm05.eg01.etisalat.net, 35950, None)
+25/12/11 14:59:27 INFO BlockManagerMasterEndpoint: Registering block manager csvapcvm05.eg01.etisalat.net:35950 with 912.3 MiB RAM, BlockManagerId(driver, csvapcvm05.eg01.etisalat.net, 35950, None)
+25/12/11 14:59:27 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, csvapcvm05.eg01.etisalat.net, 35950, None)
+25/12/11 14:59:27 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, csvapcvm05.eg01.etisalat.net, 35950, None)
+25/12/11 14:59:27 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir ('file:/home/U_MHR/spark-warehouse').
+25/12/11 14:59:27 INFO SharedState: Warehouse path is 'file:/home/U_MHR/spark-warehouse'.
+25/12/11 14:59:28 INFO HiveConf: Found configuration file null
+25/12/11 14:59:28 INFO HiveUtils: Initializing HiveMetastoreConnection version 2.3.7 using Spark classes.
+25/12/11 14:59:29 INFO HiveConf: Found configuration file null
+25/12/11 14:59:29 INFO SessionState: Created HDFS directory: /tmp/hive/U_MHR/9106c642-c9b9-4b8d-9319-f49dec3b749d
+25/12/11 14:59:29 INFO SessionState: Created local directory: /tmp/U_MHR/9106c642-c9b9-4b8d-9319-f49dec3b749d
+25/12/11 14:59:29 INFO SessionState: Created HDFS directory: /tmp/hive/U_MHR/9106c642-c9b9-4b8d-9319-f49dec3b749d/_tmp_space.db
+25/12/11 14:59:29 INFO HiveClientImpl: Warehouse location for Hive client (version 2.3.7) is file:/home/U_MHR/spark-warehouse
+25/12/11 14:59:30 WARN HiveConf: HiveConf of name hive.stats.jdbc.timeout does not exist
+25/12/11 14:59:30 WARN HiveConf: HiveConf of name hive.stats.retries.wait does not exist
+25/12/11 14:59:30 INFO HiveMetaStore: 0: Opening raw store with implementation class:org.apache.hadoop.hive.metastore.ObjectStore
+25/12/11 14:59:30 INFO ObjectStore: ObjectStore, initialize called
+25/12/11 14:59:30 INFO Persistence: Property hive.metastore.integral.jdo.pushdown unknown - will be ignored
+25/12/11 14:59:30 INFO Persistence: Property datanucleus.cache.level2 unknown - will be ignored
+25/12/11 14:59:31 INFO ObjectStore: Setting MetaStore object pin classes with hive.metastore.cache.pinobjtypes="Table,StorageDescriptor,SerDeInfo,Partition,Database,Type,FieldSchema,Order"
+25/12/11 14:59:32 INFO MetaStoreDirectSql: Using direct SQL, underlying DB is DERBY
+25/12/11 14:59:32 INFO ObjectStore: Initialized ObjectStore
+25/12/11 14:59:32 WARN ObjectStore: Version information not found in metastore. hive.metastore.schema.verification is not enabled so recording the schema version 2.3.0
+25/12/11 14:59:32 WARN ObjectStore: setMetaStoreSchemaVersion called but recording version is disabled: version = 2.3.0, comment = Set by MetaStore U_MHR@10.208.9.122
+25/12/11 14:59:32 INFO HiveMetaStore: Added admin role in metastore
+25/12/11 14:59:32 INFO HiveMetaStore: Added public role in metastore
+25/12/11 14:59:32 INFO HiveMetaStore: No user is added in admin role, since config is empty
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_all_functions
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_all_functions	
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: default
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: default	
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: global_temp
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: global_temp	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO HiveMetaStore: 0: get_database: analytics_prod
+25/12/11 14:59:32 INFO audit: ugi=U_MHR	ip=unknown-ip-addr	cmd=get_database: analytics_prod	
+25/12/11 14:59:32 WARN ObjectStore: Failed to get database analytics_prod, returning NoSuchObjectException
+25/12/11 14:59:32 INFO SparkUI: Stopped Spark web UI at http://csvapcvm05.eg01.etisalat.net:4040
+25/12/11 14:59:32 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+25/12/11 14:59:32 INFO MemoryStore: MemoryStore cleared
+25/12/11 14:59:32 INFO BlockManager: BlockManager stopped
+25/12/11 14:59:32 INFO BlockManagerMaster: BlockManagerMaster stopped
+25/12/11 14:59:32 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+25/12/11 14:59:32 INFO SparkContext: Successfully stopped SparkContext
+Traceback (most recent call last):
+  File "/data/U_MHR/oim/combined_query_weekly.py", line 147, in <module>
+    main()
+  File "/data/U_MHR/oim/combined_query_weekly.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/pyspark.zip/pyspark/sql/session.py", line 649, in sql
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/py4j-0.10.9-src.zip/py4j/java_gateway.py", line 1305, in __call__
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 134, in deco
+  File "<string>", line 3, in raise_from
+pyspark.sql.utils.AnalysisException: Table or view not found: analytics_prod.online_interest_protocols_daily; line 20 pos 5;
+'InsertIntoStatement 'UnresolvedRelation [twm_result, oim_medium_term_raw], Map(dt -> Some(2025-12-11)), false, false
++- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]
+   +- 'SubqueryAlias base
+      +- 'Union
+         :- 'Union
+         :  :- 'Union
+         :  :  :- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#0, cast('SUM(cast('mbs as decimal(18,6))) as string) AS total_mbs#1, cast('SUM('no_of_sessions) as int) AS total_sessions#2, 'COUNT('day) AS access_days#3, app AS type#4, 2025-12-11 AS day#5]
+         :  :  :  +- 'Filter (('day >= 2025-12-05) AND ('day <= 2025-12-11))
+         :  :  :     +- 'UnresolvedRelation [analytics_prod, online_interest_protocols_daily]
+         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-11 AS day#11]
+         :  :     +- 'Filter (('day >= 2025-12-05) AND ('day <= 2025-12-11))
+         :  :        +- 'UnresolvedRelation [analytics_prod, online_interest_urls_daily]
+         :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#12, 0 AS total_mbs#13, cast('SUM('no_of_sessions) as int) AS total_sessions#14, 'COUNT('day) AS access_days#15, sms AS type#16, 2025-12-11 AS day#17]
+         :     +- 'Filter (('day >= 2025-12-05) AND ('day <= 2025-12-11))
+         :        +- 'UnresolvedRelation [analytics_prod, online_interest_sms_daily]
+         +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#18, 0 AS total_mbs#19, cast('SUM('no_of_sessions) as int) AS total_sessions#20, 'COUNT('day) AS access_days#21, og AS type#22, 2025-12-11 AS day#23]
+            +- 'Filter (('day >= 2025-12-05) AND ('day <= 2025-12-11))
+               +- 'UnresolvedRelation [analytics_prod, online_interest_og_calls_daily]
+
+25/12/11 14:59:33 INFO ShutdownHookManager: Shutdown hook called
+25/12/11 14:59:33 INFO ShutdownHookManager: Deleting directory /tmp/spark-d6823f0e-b73b-4bb2-ad75-a5419e78cf88
+25/12/11 14:59:33 INFO ShutdownHookManager: Deleting direct
+
+--===================================================================================================================
+2025-12-11 14:58:53,691 - INFO - Starting default short-term run for 2025-12-09 to 2025-12-11
+2025-12-11 14:58:53,691 - INFO - Using APPEND mode for daily run on partition dt=2025-12-11
+2025-12-11 14:58:53,691 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-11...
+2025-12-11 14:59:00,283 - ERROR - Short-term job failed: Table or view not found: analytics_prod.online_interest_protocols_daily; line 20 pos 5;
+'InsertIntoStatement 'UnresolvedRelation [twm_result, oim_short_term_raw], Map(dt -> Some(2025-12-11)), false, false
++- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]
+   +- 'SubqueryAlias base
+      +- 'Union
+         :- 'Union
+         :  :- 'Union
+         :  :  :- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#0, cast('SUM(cast('mbs as decimal(18,6))) as string) AS total_mbs#1, cast('SUM('no_of_sessions) as int) AS total_sessions#2, 'COUNT('day) AS access_days#3, app AS type#4, 2025-12-11 AS day#5]
+         :  :  :  +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :  :     +- 'UnresolvedRelation [analytics_prod, online_interest_protocols_daily]
+         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-11 AS day#11]
+         :  :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :        +- 'UnresolvedRelation [analytics_prod, online_interest_urls_daily]
+         :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#12, 0 AS total_mbs#13, cast('SUM('no_of_sessions) as int) AS total_sessions#14, 'COUNT('day) AS access_days#15, sms AS type#16, 2025-12-11 AS day#17]
+         :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :        +- 'UnresolvedRelation [analytics_prod, online_interest_sms_daily]
+         +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#18, 0 AS total_mbs#19, cast('SUM('no_of_sessions) as int) AS total_sessions#20, 'COUNT('day) AS access_days#21, og AS type#22, 2025-12-11 AS day#23]
+            +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+               +- 'UnresolvedRelation [analytics_prod, online_interest_og_calls_daily]
+Traceback (most recent call last):
+  File "/data/U_MHR/oim/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/pyspark.zip/pyspark/sql/session.py", line 649, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/py4j-0.10.9-src.zip/py4j/java_gateway.py", line 1305, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 134, in deco
+    raise_from(converted)
+  File "<string>", line 3, in raise_from
+pyspark.sql.utils.AnalysisException: Table or view not found: analytics_prod.online_interest_protocols_daily; line 20 pos 5;
+'InsertIntoStatement 'UnresolvedRelation [twm_result, oim_short_term_raw], Map(dt -> Some(2025-12-11)), false, false
++- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]
+   +- 'SubqueryAlias base
+      +- 'Union
+         :- 'Union
+         :  :- 'Union
+         :  :  :- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#0, cast('SUM(cast('mbs as decimal(18,6))) as string) AS total_mbs#1, cast('SUM('no_of_sessions) as int) AS total_sessions#2, 'COUNT('day) AS access_days#3, app AS type#4, 2025-12-11 AS day#5]
+         :  :  :  +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :  :     +- 'UnresolvedRelation [analytics_prod, online_interest_protocols_daily]
+         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-11 AS day#11]
+         :  :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :        +- 'UnresolvedRelation [analytics_prod, online_interest_urls_daily]
+         :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#12, 0 AS total_mbs#13, cast('SUM('no_of_sessions) as int) AS total_sessions#14, 'COUNT('day) AS access_days#15, sms AS type#16, 2025-12-11 AS day#17]
+         :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :        +- 'UnresolvedRelation [analytics_prod, online_interest_sms_daily]
+         +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#18, 0 AS total_mbs#19, cast('SUM('no_of_sessions) as int) AS total_sessions#20, 'COUNT('day) AS access_days#21, og AS type#22, 2025-12-11 AS day#23]
+            +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+               +- 'UnresolvedRelation [analytics_prod, online_interest_og_calls_daily]
+
+2025-12-11 14:59:15,420 - INFO - Starting default short-term run for 2025-12-09 to 2025-12-11
+2025-12-11 14:59:15,421 - INFO - Using APPEND mode for daily run on partition dt=2025-12-11
+2025-12-11 14:59:15,421 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-11...
+2025-12-11 14:59:19,516 - ERROR - Short-term job failed: Table or view not found: analytics_prod.online_interest_protocols_daily; line 20 pos 5;
+'InsertIntoStatement 'UnresolvedRelation [twm_result, oim_short_term_raw], Map(dt -> Some(2025-12-11)), false, false
++- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]
+   +- 'SubqueryAlias base
+      +- 'Union
+         :- 'Union
+         :  :- 'Union
+         :  :  :- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#0, cast('SUM(cast('mbs as decimal(18,6))) as string) AS total_mbs#1, cast('SUM('no_of_sessions) as int) AS total_sessions#2, 'COUNT('day) AS access_days#3, app AS type#4, 2025-12-11 AS day#5]
+         :  :  :  +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :  :     +- 'UnresolvedRelation [analytics_prod, online_interest_protocols_daily]
+         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-11 AS day#11]
+         :  :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :        +- 'UnresolvedRelation [analytics_prod, online_interest_urls_daily]
+         :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#12, 0 AS total_mbs#13, cast('SUM('no_of_sessions) as int) AS total_sessions#14, 'COUNT('day) AS access_days#15, sms AS type#16, 2025-12-11 AS day#17]
+         :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :        +- 'UnresolvedRelation [analytics_prod, online_interest_sms_daily]
+         +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#18, 0 AS total_mbs#19, cast('SUM('no_of_sessions) as int) AS total_sessions#20, 'COUNT('day) AS access_days#21, og AS type#22, 2025-12-11 AS day#23]
+            +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+               +- 'UnresolvedRelation [analytics_prod, online_interest_og_calls_daily]
+Traceback (most recent call last):
+  File "/data/U_MHR/oim/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/pyspark.zip/pyspark/sql/session.py", line 649, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/py4j-0.10.9-src.zip/py4j/java_gateway.py", line 1305, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/Datascience/linux/Anaconda3/envs/torch/lib/python3.7/site-packages/pyspark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 134, in deco
+    raise_from(converted)
+  File "<string>", line 3, in raise_from
+pyspark.sql.utils.AnalysisException: Table or view not found: analytics_prod.online_interest_protocols_daily; line 20 pos 5;
+'InsertIntoStatement 'UnresolvedRelation [twm_result, oim_short_term_raw], Map(dt -> Some(2025-12-11)), false, false
++- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]
+   +- 'SubqueryAlias base
+      +- 'Union
+         :- 'Union
+         :  :- 'Union
+         :  :  :- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#0, cast('SUM(cast('mbs as decimal(18,6))) as string) AS total_mbs#1, cast('SUM('no_of_sessions) as int) AS total_sessions#2, 'COUNT('day) AS access_days#3, app AS type#4, 2025-12-11 AS day#5]
+         :  :  :  +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :  :     +- 'UnresolvedRelation [analytics_prod, online_interest_protocols_daily]
+         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-11 AS day#11]
+         :  :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :  :        +- 'UnresolvedRelation [analytics_prod, online_interest_urls_daily]
+         :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#12, 0 AS total_mbs#13, cast('SUM('no_of_sessions) as int) AS total_sessions#14, 'COUNT('day) AS access_days#15, sms AS type#16, 2025-12-11 AS day#17]
+         :     +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+         :        +- 'UnresolvedRelation [analytics_prod, online_interest_sms_daily]
+         +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#18, 0 AS total_mbs#19, cast('SUM('no_of_sessions) as int) AS total_sessions#20, 'COUNT('day) AS access_days#21, og AS type#22, 2025-12-11 AS day#23]
+            +- 'Filter (('day >= 2025-12-09) AND ('day <= 2025-12-11))
+               +- 'UnresolvedRelation [analytics_prod, online_interest_og_calls_daily]
+
+2025-12-11 14:59:34,064 - INFO - Starting default short-term run for 2025-12-09 to 2025-12-11
+2025-12-11 14:59:34,064 - INFO - Using APPEND mode for daily run on partition dt=2025-12-11
+2025-12-11 14:59:34,064 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-11...
+2025-12-11 14:59:38,206 - ERROR - Short-term job failed: Table or view not found: analytics_prod.online_interest_protocols_daily; line 20 pos 5;
+'InsertIntoStatement 'UnresolvedRelation [twm_result, oim_short_term_raw], Map(dt -> Some(2025-12-11)), false, false
++- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]
+   +- 'SubqueryAlias base
+      +- 'Union
+         :- 'Union
+         :  :- 'Union
+         :  :  :- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#0, cast('SUM(cast('mbs as decim
