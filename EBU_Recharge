@@ -1,0 +1,205 @@
+
+EXEC  PLDB.CRYSTAL_QUERY_BAND(
+'Application=BussinessObjects;Report_Type=CrystalReport;
+Report_Id = CN13803;
+Report_Name = CN13803 - EBU Recharge ANALYSIS;
+Report_Title = CN13803 - EBU Recharge ANALYSIS;
+Report_Path = UAT/Markrting;
+Report_Dev = Omar;');
+
+
+
+
+WITH Usg AS
+(
+    SEL
+        dp.subscription_Id
+        ,Cast(dp.Payment_Dttm AS DATE) AS Recharge_Date
+        ,CASE 
+            WHEN rc.Refill_Channel_Name IN ('Portal','MAB') AND Refill_Profile_ID = 22 THEN 'Credit' 
+            WHEN rc.Refill_Channel_Name IN ('Portal','MAB') THEN 'Digital' ELSE rc.Refill_Channel_Name 
+         END AS Channel_Name
+        ,Sum(Payment_Transaction_Amt) AS Recharge_Amount
+        ,Sum(CASE WHEN ZeroIfNull(Payment_Transaction_Amt) > 0 THEN 1 ELSE 0 END) AS recharge_Trxs
+        ,Max(CASE WHEN dp.Business_Fees_  > 0 THEN 'Y' ELSE 'N' end) AS Tesla_Recharge_Flag
+        ,Sum(CASE WHEN dp.Business_Fees_  > 0 THEN Business_Fees_ ELSE 0 end) AS Tesla_Recharge_Amount
+        ,Sum(CASE WHEN dp.Business_Fees_  > 0 THEN 1 ELSE 0 END) AS Tesla_Trxs
+        ,Sum(CASE WHEN Balance_Cd_ IN ('82','83','262','85','86') THEN Business_Fees_ ELSE 0.00 end ) Scrabble
+        ,Sum(CASE WHEN Balance_Cd_ IN ('82','83','262','85','86') THEN 1 ELSE 0 end ) Scrabble_Trx
+        ,Max(CASE WHEN Inst.subscription_id IS NOT NULL THEN 'Y' ELSE 'N' END) AS InstaBusiness_Recharge_Flag
+
+    FROM  dnom_payment dp
+    INNER JOIN Rate_plan P ON P.Rate_Plan_Product_Id = dp.Rate_Plan_Product_Id
+    LEFT JOIN VDB.PREPAID_PAYMENT pp ON pp.Payment_Id = dp.payment_id
+    LEFT JOIN Refill_Channel AS rc ON rc.Refill_Channel_ID = dp.Refill_Channel_ID_   
+    /*
+    LEFT JOIN 
+    (
+    SELECT
+    AMSH.Subscription_Id
+    ,INSTA.Action_Dttm
+    
+    FROM VDB.Navigation_SPOC_Activity AS insta 
+    INNER JOIN vdb.ACCESS_METHOD AM ON AM.Access_Method_Val = insta.SPOC_MSISDN
+    INNER JOIN VDB.ACCS_METH_SUBSCRIPTION_HIST AMSH ON AMSH.Access_Method_Id = AM.Access_Method_Id
+    
+    WHERE Action_name IN ('submitAkwaKartRecharge','submitScratchCardRecharge')
+    AND Cast({?Date_To} + 1 AS TIMESTAMP(0)) - INTERVAL '1' SECOND BETWEEN AMSH.Accs_Meth_Subsctn_Start_Dttm AND Coalesce(AMSH.Accs_Meth_Subsctn_End_Dttm,DATE'2099-01-01')
+    AND Cast(Action_Dttm AS DATE) BETWEEN {?Date_From} AND {?Date_To}
+    )Inst ON Inst.Subscription_id = dp.subscription_id AND Cast(action_dttm AS DATE) = Dp.Payment_Date 
+                                                                        AND Extract(HOUR From Action_dttm) = Extract(HOUR From dp.payment_dttm)
+    
+    */
+    LEFT JOIN
+    (
+    SELECT 
+ssr.Subscription_Id
+,ssr.Request_Time
+--,Sum(CASE WHEN ssrp.request_param_id = '436' THEN request_param_val/100 ELSE 0 END) AS Recharge_Amt
+
+FROM VDB.SUB_SERVICE_REQUEST AS SSR 
+INNER JOIN VDB.SUB_SERVICE_REQUEST_PARAM AS SSRP ON SSRP.SUBSCRIPTION_ID = SSR.SUBSCRIPTION_ID AND SSRP.SOURCE_REQUEST_ID = SSR.SOURCE_REQUEST_ID
+INNER JOIN VDB.SUB_REQUEST_PARAM SRPAR ON SRPAR.REQUEST_PARAM_ID=SSRP.REQUEST_PARAM_ID 
+INNER JOIN VDB.SUB_SERVICE AS SSRER ON SSR.SERVICE_ID=SSRER.SERVICE_ID
+LEFT JOIN VDB.SUB_SERVICE_REQUEST_TYPE AS SSRT ON SSRT.REQUEST_TYPE_ID = SSR.REQUEST_TYPE_ID
+LEFT JOIN VDB.SUB_SERVICE_STATUS AS SSS ON SSS.SERVICE_STATUS_ID = SSR.SERVICE_STATUS_ID
+LEFT JOIN Sub_Service_Channel ssc ON ssc.service_channel_id=ssr.service_channel_id
+WHERE ssr.Service_Id = 2066
+AND ssc.Service_Channel='SPOCMOBAPP'
+AND Cast(ssr.Request_Time AS DATE) BETWEEN {?Date_From} AND {?Date_To}
+AND Request_Type='Refill Command'
+GROUP BY 
+ssr.Subscription_Id
+,ssr.Request_Time
+)Inst ON Inst.Subscription_id = dp.subscription_id AND Cast(Request_Time AS DATE) = Dp.Payment_Date 
+                                                                        AND Extract(HOUR From Request_Time) = Extract(HOUR From dp.payment_dttm)
+    
+    WHERE Rate_Plan_Group = 'Business'
+    AND Cast(dp.Payment_Dttm AS DATE) BETWEEN {?Date_From} AND  {?Date_To} 
+    AND Cast(pp.Payment_Dttm AS DATE) BETWEEN {?Date_From} AND  {?Date_To}
+    AND dp.Refill_Type_Cd IN (1,2,11,12)
+    GROUP BY 1,2,3
+
+
+    UNION ALL
+
+    SEL 
+        anasm.subscription_id
+        ,call_start_date AS Recharge_Date
+        ,'Digital' AS Channel_Name
+        ,Sum(CASE WHEN Network_Activity_Type_Group = 'tesla' THEN anasm.Call_Charge_Amount ELSE 0 END) AS Recharge_Amount
+        ,Sum(CASE WHEN Network_Activity_Type_Group = 'tesla' AND ZeroIfNull(anasm.Call_Charge_Amount) > 0 THEN 1 ELSE 0 END) AS recharge_Trxs
+        ,(CASE WHEN Network_Activity_Type_Group = 'tesla' AND ZeroIfNull(anasm.Call_Charge_Amount) > 0 THEN 'Y' ELSE 'N' end) AS Tesla_Recharge_Flag
+        ,Sum(CASE WHEN Network_Activity_Type_Group = 'tesla' THEN anasm.Call_Charge_Amount ELSE 0 end) AS Tesla_Recharge_Amount
+        ,Sum(CASE WHEN Network_Activity_Type_Group = 'tesla' AND ZeroIfNull(anasm.Call_Charge_Amount) > 0 THEN 1 ELSE 0 END) AS Tesla_Trxs
+        ,Sum(0) AS scrabble
+        ,Sum(0) Scrabble_Trx
+	,'N' AS InstaBusiness_Recharge_Flag
+
+    FROM AGG_NW_ACTIVITY_SUBS_daily AS anasm 
+    INNER JOIN Rate_plan P ON P.Rate_Plan_Product_Id = anasm.Rate_Plan_Product_Id
+    INNER JOIN network_activity_type nat ON nat.Network_Activity_Type_Cd = anasm.Network_Activity_Type_Cd
+    WHERE Rate_Plan_Group = 'Business'
+    AND call_start_date BETWEEN {?Date_From} AND {?Date_To}
+    AND Network_Activity_Type_Group = 'tesla'
+    GROUP BY 1,2,3,6
+),
+
+-------------------- ACCOUNT KPIs -----------------------------------
+Acc AS
+(
+    SELECT 
+        dsi.subscription_id
+        ,ACT.Account_Type_Name AS Segment_Type
+        ,AI.Acc_Name AS ACCOUNT_NAME
+        ,dsi.Main_Account_Num AS ACCOUNT_#
+
+    FROM detailed_subscription_info dsi 
+    INNER JOIN (SELECT Subscription_Id FROM Usg GROUP BY 1) AS base ON base.subscription_id = dsi.subscription_id
+    INNER JOIN VDB.ACCOUNT_INFO AI ON AI.Account_Id = dsi.main_account_id AND AI.Billing_Ind = '1'
+    INNER JOIN VDB.ACCOUNTS AS A ON A.Account_Id = AI.Account_Id
+    INNER JOIN VDB.ACCOUNT_TYPE AS ACT ON ACT.Account_Type_Cd = A.Account_Type_Cd
+    GROUP BY 1,2,3,4
+),
+
+----------------------------------- CONNECT FLAG -----------------------------------
+--================================= Agg_Nw_Activity_Subs Usg =======================
+Conn_1 AS
+(
+    SEL 
+        anasm.subscription_id
+        ,Max(CASE WHEN Network_Activity_Type_Group = 'tesla' AND anasm.Call_Charge_Amount > 0 THEN 'Y' ELSE 'N' end) AS Tesla_Ded_Flag
+        ,Sum(CASE WHEN anasm.Network_Activity_Type_Cd=11 AND clt.Call_Type_Group IN('Connect','Lego','Kinder','Youda') THEN anasm.Data_Volume/1024.0000/1024.0000 END ) AS Connect_MBs
+
+
+    FROM AGG_NW_ACTIVITY_SUBS_Monthly AS anasm 
+    INNER JOIN (SELECT Subscription_Id FROM Usg GROUP BY 1) AS base ON base.subscription_id = anasm.subscription_id
+    INNER JOIN Call_Type clt ON clt.Call_Type_Id = anasm.Call_Type_Id
+    INNER JOIN network_activity_type nat ON nat.Network_Activity_Type_Cd = anasm.Network_Activity_Type_Cd
+    WHERE call_start_year = Extract(YEAR From {?Date_From}) AND call_start_Month = Extract(MONTH From {?Date_From})
+    AND USAGE_TYPE <> 'MTC'
+    AND (anasm.NETWORK_ACTIVITY_TYPE_CD IN ('11') OR Network_Activity_Type_Group = 'tesla')
+    GROUP BY 1
+),
+--================================= PREPAID_ADJUSTMENT Usg ==========================
+Conn_2 AS
+(
+    SEL
+        base.Subscription_Id
+        ,Sum(CASE WHEN pa.Adjustment_Reason_Cd IN ('Terra Postpaid Renewal','Connect Revamp') THEN pa.Transaction_Amount END) AS Connect_Fees
+
+    FROM VDB.PREPAID_ADJUSTMENT AS PA 
+    INNER JOIN (SEL Subscription_Id FROM Usg GROUP BY 1) AS base ON base.Subscription_Id = PA.Subscription_Id
+    WHERE Cast (PA.Transaction_Dttm  AS DATE ) BETWEEN  {?Date_From}   AND  {?Date_To} 
+    AND ZeroIfNull(PA.Transaction_Amount) > 0.00 
+    GROUP BY 1
+),
+
+
+----------------------------------- Redeem -----------------------------------
+Redeem AS (
+    SEL
+        a.Subscription_Id
+        ,a.Request_Time
+        ,Coalesce(ssc2.Service_Channel_Desc,ssc.Service_Channel_Desc) AS Service_Channel_Desc
+
+    FROM vdb.sub_service_request a 
+    INNER JOIN (SELECT Subscription_Id FROM Usg GROUP BY 1) AS base ON base.subscription_id = a.subscription_id
+    --INNER JOIN vdb.Sub_Service_Request_Param b ON a.source_request_id = b.source_request_id AND a.Subscription_Id = b.Subscription_Id AND Cast(a.request_time AS DATE) = Cast(b.request_time AS DATE) 
+    INNER JOIN vdb.sub_service_status st ON a.service_status_id = st.service_status_id 
+    INNER JOIN vdb.sub_service_request_type sr ON a.request_type_id = sr.request_type_id 
+    LEFT JOIN vdb.Sub_Service_Channel AS ssc ON ssc.Service_Channel_Id = a.Service_Channel_Id 
+    LEFT JOIN vdb.Sub_Service_Channel AS ssc2 ON ssc2.Service_Channel_Id = a.source_Channel_Id 
+    WHERE service_id IN (1732,2105) AND Cast(a.request_time AS DATE) BETWEEN {?Date_From} AND {?Date_To} 
+    AND request_type = 'Redeem Command' AND service_status LIKE '%success%' 
+    GROUP BY 1,2,3
+    QUALIFY Row_Number() Over (PARTITION BY a.Subscription_Id ORDER BY request_time DESC) = 1
+)
+----------------------------------- MAIN SELECT -----------------------------------
+SELECT 
+    Usg.subscription_Id
+    ,RP.Rate_Plan_Category
+    ,RP.Rate_Plan_Desc
+    ,Usg.Recharge_Date
+    ,Usg.Channel_Name
+    ,(CASE WHEN R.Service_Channel_Desc IS NOT NULL THEN R.Service_Channel_Desc ELSE 'N/A' END) AS Redeem_Channel
+    ,Usg.Recharge_Amount
+    ,Usg.recharge_Trxs
+    ,CASE WHEN Coalesce(Tesla_Recharge_Flag,'N') = 'Y' THEN 'Y' ELSE 'N' end AS Tesla_Flag
+    ,Usg.Tesla_Recharge_Amount
+    ,Usg.Tesla_Trxs
+    ,Usg.scrabble
+    ,Usg.Scrabble_Trx
+    ,CASE WHEN ZeroIfNull(Connect_MBs) > 0  OR ZeroIfNull(Connect_Fees) > 0 THEN 'Y' ELSE 'N' end AS Connect_Flag
+    ,Acc.ACCOUNT_NAME AS Account_Name
+    ,Acc.Account_#
+    ,Acc.Segment_Type
+    ,InstaBusiness_Recharge_Flag
+    
+FROM Usg
+INNER JOIN Acc ON Acc.subscription_id = Usg.subscription_Id
+INNER JOIN VDB.DETAILED_SUBSCRIPTION_INFO DSI ON DSI.subscription_Id = Usg.subscription_Id
+INNER JOIN VDB.rate_plan RP ON RP.Rate_Plan_Product_Id = DSI.Rate_Plan_Product_Id
+LEFT JOIN Conn_1 C1 ON C1.Subscription_Id = Usg.subscription_Id
+LEFT JOIN Conn_2 C2 ON C2.subscription_Id = Usg.subscription_Id
+LEFT JOIN Redeem R ON R.SUBSCRIPTION_ID = Usg.SUBSCRIPTION_ID AND Cast(r.Request_Time AS DATE) = Usg.Recharge_Date
