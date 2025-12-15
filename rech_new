@@ -1,0 +1,55 @@
+CREATE MULTISET TABLE twm_RESULT.MHR_Corporate_Groups_Base AS (
+
+SEL
+DSI.Subscription_Id
+, RP.Rate_Plan_Group
+, RP.Rate_Plan_Category
+, CBSF.XNET_Base_Segmentation
+, CASE 
+    WHEN ZeroIfNull(Total_Recharge) = 0 THEN '0'
+    WHEN ZeroIfNull(Total_Recharge) BETWEEN 1 AND 10 THEN '1--10'
+    WHEN ZeroIfNull(Total_Recharge) BETWEEN 10 AND 30 THEN '10--30'
+    WHEN ZeroIfNull(Total_Recharge) BETWEEN 30 AND 50 THEN '30--50'
+    ELSE '50++' END AS Total_Recharge_Tier
+, CASE 
+    WHEN RP.Rate_Plan_Category = 'PostPaid' THEN ZeroIfNull(CRMP.Decile)
+    WHEN RP.Rate_Plan_Category = 'PrePaid' THEN ZeroIfNull(CPRP.Decile)
+    ELSE 0 END AS Corporate_Decile
+FROM VDB.DETAILED_SUBSCRIPTION_INFO AS DSI
+LEFT JOIN VDB.rate_plan AS RP ON RP.Rate_Plan_Product_Id = DSI.Rate_Plan_Product_Id
+LEFT JOIN VDB.Corp_Base_Segmentation_Final AS CBSF ON CBSF.Subscription_Id = DSI.Subscription_Id
+LEFT JOIN (
+
+SEL
+CPRP.Subscription_Id
+, CPRP.Decile
+FROM VDB.Corp_Pre_Recharge_Propensity AS CPRP
+WHERE CPRP.Running_date = DATE - 1
+
+) AS CPRP ON CPRP.Subscription_Id = DSI.Subscription_Id
+LEFT JOIN (
+
+SEL
+CRMP.Subscription_Id
+, CRMP.Decile
+FROM VDB.Corporate_Recharge_Model_Propensity AS CRMP
+WHERE CRMP.Running_date = DATE - 1
+
+) AS CRMP ON CRMP.Subscription_Id = DSI.Subscription_Id
+LEFT JOIN (
+
+SEL
+CRD.Subscription_Id
+, Sum(CRD.Recharge_amt) AS Total_Recharge
+FROM VDB.CVM_Recharge_Daily AS CRD
+WHERE 1 = 1
+AND CRD.Payment_Date BETWEEN DATE '2025-11-01' AND DATE '2025-11-30'
+GROUP BY 1
+
+) AS RCH ON RCH.Subscription_Id = DSI.Subscription_Id
+WHERE 1 = 1
+AND DSI.Subscription_Status_Group_Cd NOT IN (-1, 4)
+AND RP.Rate_Plan_Group = 'Business'
+GROUP BY 1, 2, 3, 4, 5, 6
+
+) WITH DATA PRIMARY INDEX (subscription_id);
