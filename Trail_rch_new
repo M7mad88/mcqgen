@@ -1,0 +1,57 @@
+-- 1) BO Recharge Amount (payment-based), 2) Rev_Gross, 3) Rev_Net
+CREATE MULTISET TABLE twm_RESULT.MHR_Corp_Revenue_Trials AS
+(
+WITH base AS (
+  SEL Subscription_Id
+  FROM twm_RESULT.MHR_Corporate_Groups_Base
+  GROUP BY 1
+),
+
+-- A) BO Recharge logic (payments)
+bo_recharge AS (
+  SEL
+    dp.subscription_id
+  , EXTRACT(YEAR  FROM CAST(dp.Payment_Dttm AS DATE)) AS yr
+  , EXTRACT(MONTH FROM CAST(dp.Payment_Dttm AS DATE)) AS mn
+  , SUM(dp.Payment_Transaction_Amt) AS BO_Recharge_Amt
+  FROM dnom_payment dp
+  INNER JOIN base b
+    ON b.subscription_id = dp.subscription_id
+  INNER JOIN VDB.rate_plan rp
+    ON rp.Rate_Plan_Product_Id = dp.Rate_Plan_Product_Id
+  LEFT JOIN VDB.PREPAID_PAYMENT pp
+    ON pp.Payment_Id = dp.payment_id
+  WHERE rp.Rate_Plan_Group = 'Business'
+    AND CAST(dp.Payment_Dttm AS DATE) BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+    AND CAST(pp.Payment_Dttm AS DATE) BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+    AND dp.Refill_Type_Cd IN (1,2,11,12)
+  GROUP BY 1,2,3
+),
+
+-- B/C) RevenueMart (ASRM)
+asrm_rev AS (
+  SEL
+    asrm.subscription_id
+  , EXTRACT(YEAR  FROM asrm.Revenue_Date) AS yr
+  , EXTRACT(MONTH FROM asrm.Revenue_Date) AS mn
+  , SUM(asrm.Total_Revenue) AS Rev_Gross
+  , SUM(asrm.Total_Revenue - asrm.Bill_Amount) AS Rev_Net
+  FROM VDB.AGG_SUBS_REVENUE_MONTHLY asrm
+  INNER JOIN base b
+    ON b.subscription_id = asrm.subscription_id
+  WHERE asrm.Revenue_Date BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+  GROUP BY 1,2,3
+)
+
+SEL
+  COALESCE(r.yr, a.yr) AS yr
+, COALESCE(r.mn, a.mn) AS mn
+, SUM(COALESCE(r.BO_Recharge_Amt,0)) AS BO_Recharge_Amt
+, SUM(COALESCE(a.Rev_Net,0))        AS Rev_Net
+, SUM(COALESCE(a.Rev_Gross,0))      AS Rev_Gross
+FROM bo_recharge r
+FULL OUTER JOIN asrm_rev a
+  ON a.subscription_id = r.subscription_id
+ AND a.yr = r.yr AND a.mn = r.mn
+GROUP BY 1,2
+) WITH DATA;
