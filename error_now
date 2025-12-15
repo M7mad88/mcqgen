@@ -1,0 +1,1134 @@
+2025-12-15 14:19:02,207 - ERROR - Short-term job failed: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 20, in main
+    .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 173, in getOrCreate
+    sc = SparkContext.getOrCreate(sparkConf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 369, in getOrCreate
+    SparkContext(conf=conf or SparkConf())
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 136, in __init__
+    conf, jsc, profiler_cls)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 198, in _do_init
+    self._jsc = jsc or self._initialize_context(self._conf._jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 308, in _initialize_context
+    return self._jvm.JavaSparkContext(jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1525, in __call__
+    answer, self._gateway_client, None, self._fqn)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/protocol.py", line 328, in get_return_value
+    format(target_id, ".", name), value)
+Py4JJavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+
+2025-12-15 14:19:18,727 - ERROR - Short-term job failed: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 20, in main
+    .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 173, in getOrCreate
+    sc = SparkContext.getOrCreate(sparkConf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 369, in getOrCreate
+    SparkContext(conf=conf or SparkConf())
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 136, in __init__
+    conf, jsc, profiler_cls)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 198, in _do_init
+    self._jsc = jsc or self._initialize_context(self._conf._jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 308, in _initialize_context
+    return self._jvm.JavaSparkContext(jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1525, in __call__
+    answer, self._gateway_client, None, self._fqn)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/protocol.py", line 328, in get_return_value
+    format(target_id, ".", name), value)
+Py4JJavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+
+2025-12-15 14:20:50,513 - ERROR - Short-term job failed: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 20, in main
+    .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 173, in getOrCreate
+    sc = SparkContext.getOrCreate(sparkConf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 369, in getOrCreate
+    SparkContext(conf=conf or SparkConf())
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 136, in __init__
+    conf, jsc, profiler_cls)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 198, in _do_init
+    self._jsc = jsc or self._initialize_context(self._conf._jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 308, in _initialize_context
+    return self._jvm.JavaSparkContext(jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1525, in __call__
+    answer, self._gateway_client, None, self._fqn)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/protocol.py", line 328, in get_return_value
+    format(target_id, ".", name), value)
+Py4JJavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+
+2025-12-15 14:20:54,195 - ERROR - Short-term job failed: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 20, in main
+    .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 173, in getOrCreate
+    sc = SparkContext.getOrCreate(sparkConf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 369, in getOrCreate
+    SparkContext(conf=conf or SparkConf())
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 136, in __init__
+    conf, jsc, profiler_cls)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 198, in _do_init
+    self._jsc = jsc or self._initialize_context(self._conf._jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 308, in _initialize_context
+    return self._jvm.JavaSparkContext(jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1525, in __call__
+    answer, self._gateway_client, None, self._fqn)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/protocol.py", line 328, in get_return_value
+    format(target_id, ".", name), value)
+Py4JJavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+
+2025-12-15 14:20:56,866 - ERROR - Short-term job failed: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 20, in main
+    .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 173, in getOrCreate
+    sc = SparkContext.getOrCreate(sparkConf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 369, in getOrCreate
+    SparkContext(conf=conf or SparkConf())
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 136, in __init__
+    conf, jsc, profiler_cls)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 198, in _do_init
+    self._jsc = jsc or self._initialize_context(self._conf._jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 308, in _initialize_context
+    return self._jvm.JavaSparkContext(jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1525, in __call__
+    answer, self._gateway_client, None, self._fqn)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/protocol.py", line 328, in get_return_value
+    format(target_id, ".", name), value)
+Py4JJavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+
+2025-12-15 14:21:31,788 - ERROR - Short-term job failed: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 20, in main
+    .config("hive.exec.dynamic.partition.mode", "nonstrict") \
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 173, in getOrCreate
+    sc = SparkContext.getOrCreate(sparkConf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 369, in getOrCreate
+    SparkContext(conf=conf or SparkConf())
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 136, in __init__
+    conf, jsc, profiler_cls)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 198, in _do_init
+    self._jsc = jsc or self._initialize_context(self._conf._jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/context.py", line 308, in _initialize_context
+    return self._jvm.JavaSparkContext(jconf)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1525, in __call__
+    answer, self._gateway_client, None, self._fqn)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/protocol.py", line 328, in get_return_value
+    format(target_id, ".", name), value)
+Py4JJavaError: An error occurred while calling None.org.apache.spark.api.java.JavaSparkContext.
+: java.io.IOException: DestHost:destPort lakenode12.eg01.etisalat.net:8032 , LocalHost:localPort lakenode15.eg01.etisalat.net/10.208.244.129:0. Failed on local exception: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.net.NetUtils.wrapWithMessage(NetUtils.java:892)
+	at org.apache.hadoop.net.NetUtils.wrapException(NetUtils.java:867)
+	at org.apache.hadoop.ipc.Client.getRpcResponse(Client.java:1620)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1562)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1459)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:233)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:118)
+	at com.sun.proxy.$Proxy23.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.api.impl.pb.client.ApplicationClientProtocolPBClientImpl.getNewApplication(ApplicationClientProtocolPBClientImpl.java:286)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:431)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeMethod(RetryInvocationHandler.java:166)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invoke(RetryInvocationHandler.java:158)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler$Call.invokeOnce(RetryInvocationHandler.java:96)
+	at org.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:362)
+	at com.sun.proxy.$Proxy24.getNewApplication(Unknown Source)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.getNewApplication(YarnClientImpl.java:282)
+	at org.apache.hadoop.yarn.client.api.impl.YarnClientImpl.createApplication(YarnClientImpl.java:290)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:173)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:191)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:520)
+	at org.apache.spark.api.java.JavaSparkContext.<init>(JavaSparkContext.scala:58)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:247)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:357)
+	at py4j.Gateway.invoke(Gateway.java:238)
+	at py4j.commands.ConstructorCommand.invokeConstructor(ConstructorCommand.java:80)
+	at py4j.commands.ConstructorCommand.execute(ConstructorCommand.java:69)
+	at py4j.GatewayConnection.run(GatewayConnection.java:238)
+	at java.lang.Thread.run(Thread.java:750)
+Caused by: java.io.IOException: Couldn't setup connection for MOSTAFA.AKKAMEL@EG01.ETISALAT.NET to lakenode12.eg01.etisalat.net/10.208.244.126:8032
+	at org.apache.hadoop.ipc.Client$Connection$1.run(Client.java:800)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.handleSaslConnectionFailure(Client.java:771)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:866)
+	at org.apache.hadoop.ipc.Client$Connection.access$3800(Client.java:430)
+	at org.apache.hadoop.ipc.Client.getConnection(Client.java:1681)
+	at org.apache.hadoop.ipc.Client.call(Client.java:1506)
+	... 33 more
+Caused by: javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)]
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:211)
+	at org.apache.hadoop.security.SaslRpcClient.saslConnect(SaslRpcClient.java:408)
+	at org.apache.hadoop.ipc.Client$Connection.setupSaslConnection(Client.java:639)
+	at org.apache.hadoop.ipc.Client$Connection.access$2300(Client.java:430)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:853)
+	at org.apache.hadoop.ipc.Client$Connection$2.run(Client.java:849)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1899)
+	at org.apache.hadoop.ipc.Client$Connection.setupIOstreams(Client.java:849)
+	... 36 more
+Caused by: GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)
+	at sun.security.jgss.krb5.Krb5InitCredential.getInstance(Krb5InitCredential.java:162)
+	at sun.security.jgss.krb5.Krb5MechFactory.getCredentialElement(Krb5MechFactory.java:122)
+	at sun.security.jgss.krb5.Krb5MechFactory.getMechanismContext(Krb5MechFactory.java:189)
+	at sun.security.jgss.GSSManagerImpl.getMechanismContext(GSSManagerImpl.java:224)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:212)
+	at sun.security.jgss.GSSContextImpl.initSecContext(GSSContextImpl.java:179)
+	at com.sun.security.sasl.gsskerb.GssKrb5Client.evaluateChallenge(GssKrb5Client.java:192)
+	... 45 more
+
+2025-12-15 14:21:35,470 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:21:35,470 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:21:35,471 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:21:39,118 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:21:39,118 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:21:39,119 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:21:51,813 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:21:52,430 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:22:37,347 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:22:37,347 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:22:37,347 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:22:37,748 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:22:37,748 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:22:37,748 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:22:37,964 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:22:37,964 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:22:37,965 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:22:38,568 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:22:38,568 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:22:38,568 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:22:48,222 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:22:48,743 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:22:49,452 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:22:49,883 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:23:21,455 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:23:21,455 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:23:21,455 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:23:24,091 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:23:24,091 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:23:24,091 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:23:24,788 - INFO - Starting default short-term run for 2025-12-13 to 2025-12-15
+2025-12-15 14:23:24,788 - INFO - Using APPEND mode for daily run on partition dt=2025-12-15
+2025-12-15 14:23:24,788 - INFO - Executing insert into twm_result.oim_short_term_raw for dt=2025-12-15...
+2025-12-15 14:23:30,418 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:23:33,328 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+2025-12-15 14:23:36,207 - ERROR - Short-term job failed: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
+Traceback (most recent call last):
+  File "/home/mostafa.akkamel@EG01.Etisalat.net/Adel/combined_query_daily.py", line 137, in main
+    spark.sql(insert_sql)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/session.py", line 767, in sql
+    return DataFrame(self._jsparkSession.sql(sqlQuery), self._wrapped)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/py4j-0.10.7-src.zip/py4j/java_gateway.py", line 1257, in __call__
+    answer, self.gateway_client, self.target_id, self.name)
+  File "/opt/cloudera/parcels/CDH-7.1.9-1.cdh7.1.9.p9.52289703/lib/spark/python/lib/pyspark.zip/pyspark/sql/utils.py", line 69, in deco
+    raise AnalysisException(s.split(': ', 1)[1], stackTrace)
+AnalysisException: u"Table or view not found: `analytics_prod`.`online_interest_urls_daily`; line 34 pos 5;\n'InsertIntoTable 'UnresolvedRelation `twm_result`.`oim_short_term_raw`, Map(dt -> Some(2025-12-15)), false, false\n+- 'Project ['subscription_id, 'app_name, 'app_category, 'total_mbs, 'total_sessions, 'access_days, 'type, 'day]\n   +- 'SubqueryAlias `base`\n      +- 'Union\n         :- 'Union\n         :  :- 'Union\n         :  :  :- Aggregate [subscription_id#24, app_name#25, app_category#26], [subscription_id#24, app_name#25, lower(app_category#26) AS app_category#0, cast(sum(cast(mbs#27 as decimal(18,6))) as string) AS total_mbs#1, cast(sum(cast(no_of_sessions#28 as bigint)) as int) AS total_sessions#2, count(distinct day#29) AS access_days#3L, app AS type#4, 2025-12-15 AS day#5]\n         :  :  :  +- Filter ((day#29 >= 2025-12-13) && (day#29 <= 2025-12-15))\n         :  :  :     +- SubqueryAlias `analytics_prod`.`online_interest_protocols_daily`\n         :  :  :        +- Relation[subscription_id#24,app_name#25,app_category#26,mbs#27,no_of_sessions#28,day#29] parquet\n         :  :  +- 'Aggregate ['subscription_id, 'app_name, 'app_category], ['subscription_id, 'app_name, 'lower('app_category) AS app_category#6, 0 AS total_mbs#7, cast('SUM('no_of_sessions) as int) AS total_sessions#8, 'COUNT('day) AS access_days#9, url AS type#10, 2025-12-15 AS day#11]\n         :  :     +- 'Filter (('day >= 2025-12-13) && ('day <= 2025-12-15))\n         :  :        +- 'UnresolvedRelation `analytics_prod`.`online_interest_urls_daily`\n         :  +- Aggregate [subscription_id#30, app_name#31, app_category#32], [subscription_id#30, app_name#31, lower(app_category#32) AS app_category#12, 0 AS total_mbs#13, cast(sum(cast(no_of_sessions#33 as bigint)) as int) AS total_sessions#14, count(distinct day#34) AS access_days#15L, sms AS type#16, 2025-12-15 AS day#17]\n         :     +- Filter ((day#34 >= 2025-12-13) && (day#34 <= 2025-12-15))\n         :        +- SubqueryAlias `analytics_prod`.`online_interest_sms_daily`\n         :           +- Relation[subscription_id#30,app_name#31,app_category#32,no_of_sessions#33,day#34] parquet\n         +- Aggregate [subscription_id#35, app_name#36, app_category#37], [subscription_id#35, app_name#36, lower(app_category#37) AS app_category#18, 0 AS total_mbs#19, cast(sum(cast(no_of_sessions#38 as bigint)) as int) AS total_sessions#20, count(distinct day#39) AS access_days#21L, og AS type#22, 2025-12-15 AS day#23]\n            +- Filter ((day#39 >= 2025-12-13) && (day#39 <= 2025-12-15))\n               +- SubqueryAlias `analytics_prod`.`online_interest_og_calls_daily`\n                  +- Relation[subscription_id#35,app_name#36,app_category#37,no_of_sessions#38,day#39] parquet\n"
