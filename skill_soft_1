@@ -1,0 +1,166 @@
+First and foremost, we will discuss Bernoulli distribution, which is the easiest distribution of data that there is. In Bernoulli's distribution there are only two possible outcomes and a single trial. For example, a single toss of a coin only has two possible outcomes, that is either a heads or a tails. And the probability of heads is considered to be p the probability for tails would be 1-p. So in Bernoulli's distribution, the probabilities of all the mutually exclusive events that cover all possible outcomes add up to 1.
+
+If the coin is unbiased, the probability for heads as well as for tails would be 0.5. The second data distribution that we are going to discuss is uniform distribution, which is derived from Bernoulli distribution. The uniform distribution can have a possible, unlimited number of outcomes wherein all the events have the same probability of taking place. For example, the roll of a dice can have six possible outcomes with equal probability.
+
+As with Bernoulli distribution, the sum of all mutually exclusive events that cover all possible outcomes in a uniform distribution also add up to 1. Therefore, these are called mutually exclusive events. The third distribution that we will be talking about is called the binomial distribution. Binomial distribution can be considered to be the sum of outcomes of an event that follows a Bernoulli distribution.
+
+It is used when an event has a binary outcome and the probability of both outcomes is exactly the same in all successive multiple trials. So in summary, Binomial distribution takes two main parameters as its inputs, the first being the number of times that an event is taking place and the second being the probability that is assigned to each of the two potential outcomes or classes. Also, it is important that each of the multiple trials is independent of one another, which means that an outcome of one trial does not impact the outcome of any other subsequent trial.
+
+4. Video: Normal, Poisson, and Exponential Data Distributions (it_clawsml_06_enus_04)
+
+During this video, you will learn how to define normal, Poisson, and exponential data distributions.
+define normal, Poisson, and exponential data distributions
+[Video description begins] Topic title: Normal, Poisson, and Exponential Data Distributions. Your host for this session is Garv Khurana. [Video description ends]
+In this video, we will continue our introduction to various types of data distributions that are commonly used in data science. So far we've covered three main distributions, namely Bernoulli distribution, Uniform distribution, and Binomial distribution. In this video, we will cover Normal distribution, Poisson distribution, and Exponential distribution.
+
+First, let us discuss Normal distribution. Normal distribution is one of the most fundamental and commonly occurring data distributions that we see with data in our daily lives. Most common datasets, such as average heights of population, income distributions within a certain population, average grades achieved by students, all typically follow a Normal or a Gaussian distribution. The fundamental characteristic of Normal distribution is that the data is centered around mean values symmetrically.
+
+In other words, the probability distribution curve of the population is symmetric at the center, where the mean, mode, and median of the population are all equal in value. Also at the end of the distribution curve is equal to one. Additionally, it is interesting to note that in the real world, datasets are often transformed by applying square root's method or by chaining them to the logarithmic scale to convert non-normal data into Normal distribution.
+
+Next, we are going to discuss Poisson distribution. Poisson distribution is a discrete probability distribution of the number of events that occur within a stipulated time given the average number of time that event occurs is known. In other words, Poisson distribution is used to determine probability of any event occurring or not occurring when it is known how often the event occurs in a given time period. Therefore, in Poisson distribution, we are confident about the average time of occurrence between different events.
+
+Therefore, in Poisson distribution, we are confident about the average time of occurrence between different time periods. But the exact moment when that event might occur might be randomly spaced within that time period. The main characteristics of a dataset that follow Poisson distribution are: the events occurring are independent of each other, the average rate between the event occurrence is constant and does not vary, and two or more events cannot take place simultaneously at any point in time.
+
+Lastly, we're going to discuss Exponential distribution, which is used to determine time taken between the occurrence of different events. In essence, the Exponential distribution is the probability distribution of time between event and a Poisson point process wherein events occur continuously and independently at a constant average rate.
+
+Exponential distribution is often used when we want to determine the amount of time it will take until a certain specific event will occur. Values for an Exponential random variable occur naturally in a way where there are only few large values and relatively a lot more smaller values. For example, the average money spent by customers in a supermarket typically follows an Exponential distribution, wherein a few customers spend a lot more money for a trip and the majority of the people spend much smaller amounts in comparison.
+
+In the real world, Exponential distribution is typically used to calculate reliability of a product or the length of time a product lasts, such as years a car battery would last.
+
+5. Video: The Primary Role of Data Visualization (it_clawsml_06_enus_05)
+
+In this video, discover how visualization can help communicate information from analyzed data.
+describe the key role of visualization in communicating information from analyzed data
+[Video description begins] Topic title: The Primary Role of Data Visualization. Your host for this session is Garv Khurana. [Video description ends]
+In this video, we will learn about the field of data visualization and its key role in communication of information from the analyzed data. Data visualization is an interdisciplinary field that primarily deals with visual and graphical representation of data. It summarizes data and the relationships that exist within dataset in a visual form that is easier to understand, that is intuitive and efficient at communicating information.
+
+By effective visualization of information, users can analyze, understand, and absorb data a lot more efficiently and thus use it better. Good data visualization should balance functionality and aesthetics to provide the correct insight to users in an intuitive way. The two primary types of information displays using data visualizations are graphs and tables. Tables are comprised of numerical or quantitative data that is organized into rows and columns with correct attribute labels. Tables are largely useful for looking up specific values which are organized efficiently.
+
+A graph is essentially a visual representation of data using objects such as lines, bars, or points that are delineated by one or more axes. The graphs or charts use different scales to represent numerical values in an intuitive and visual manner. Effective visual representations of data should have the following characteristics: they should clearly show the data at hand, encourage the user to analyze the data, avoid distracting the user with unnecessary information, make large datasets visually coherent, and reveal both micro and macro characteristics of the dataset.
+
+Finally, a good visual representation also encourages users to compare different datasets to each other. As we know, the human brain can distinguish between different shapes, colors, distances, orientations, and sizes a lot easier than analyzing sets of numbers. Therefore, effective visualization should take advantage of human visual perception and use the characteristics that we just discussed to effectively communicate information.
+
+6. Video: Data Visualization - Traditional Graphic Types (it_clawsml_06_enus_06)
+
+Discover how to name and describe traditional types of graphics used in data analysis.
+name and describe traditional graphic types used in data analysis
+[Video description begins] Topic title: Data Visualization - Traditional Graphic Types. Your host for this session is Garv Khurana. [Video description ends]
+After understanding what data visualizations are, now we will learn about the different types of data visualizations and their uses. In this video, we will learn about the different types of traditional graphic types used in data analysis. First, we will discuss line charts. Line charts are simple and traditional charts that typically illustrate changes in a variable as compared to another variable.
+
+Often changes in a certain variable over the length of time are illustrated using line charts. In such cases, the X-axis usually denotes time, while the Y-axis represents the quantity. A bar chart is a similar chart that illustrates changes in a variable at various time points or when compared to another variable. Bar charts represent categorical data with rectangular bars that are proportional to the values that they represent and can be plotted both horizontally and vertically.
+
+They are really useful to show comparisons among different categories and can be clustered in groups of more than one. Histograms are similar to bar charts, where the entire range of values is divided into a series of intervals and are binned by counting how many values fall in each interval. This creates a visual representation of the distribution of the numerical data, and the bins are visually plotted next to each other and are typically of equal sizes. Another commonly used chart type in data visualization is scatter plot.
+
+In scatter plot, Cartesian coordinates are used to display values for typically two or more variables. Each data point has an associated X and a Y value that determines the exact location on a certain Cartesian plane. Different variables can be displayed on the same coordinates and can be differentiated to each other using color, shape, and additional information apart from the X and Y values. Scatter plots can also be used to visualize the relationship between three variables of data using a 3D plot having X, Y and Z value associated to each point, including three different variables.
+
+7. Video: Data Visualization - Modern Graphic Types (it_clawsml_06_enus_07)
+
+In this video, you will name and describe modern graphic types used in data analysis.
+name and describe modern graphic types used in data analysis
+[Video description begins] Topic title: Data Visualization - Modern Graphic Types. Your host for this session is Garv Khurana. [Video description ends]
+Apart from the traditional ways to represent data, more intuitive and visually rich forms of representations have evolved over the past few years. Often these are used to represent more complex data in an easy and effective manner. In this video, we will learn about the different types of modern graphics that are used in data analysis. The first of the modern data visualization graphics that we are going to discuss are stream graphs.
+
+Stream graphs are a type of stacked area graphs that are displaced around a central axis, resulting in a flowing shape. Unlike in our traditional stacked graphs, where the layers of data are stacked on top of an axis, in a stream graph, they are positioned in a way that minimizes their wiggle. One limitation of stream graphs is that they can only be used to display the data with positive values.
+
+Next, we will study network graphs. Network graphs are an interesting way to represent extremely large datasets which have underlying clusters or groupings within the network. In network analysis, users can identify the most influential nodes in the network, as well as identify outliers that do not fall in any cluster. Moreover, different datasets can be represented by different node colors and different thickness.
+
+Next, let us study tree maps. Tree maps are an interesting way to display hierarchical data using nested rectangles. The size and color of rectangles display the proportion and different categories of variables in a dataset. Lastly, we're going to study heatmaps. Heatmaps are used to represent magnitude of a phenomenon using color in two dimensions.
+
+The variation in color by hue or intensity gives an intuitive visual representation to the user about how a certain variable is clustered and how it changes spatially. Heatmaps can either be displayed in form of a matrix of fixed cell sizes with rows and columns denoting different categories and phenomena, or by the location of the magnitude of a variable in a continuous area.
+
+8. Video: Implementing Data Visualization with Python (it_clawsml_06_enus_08)
+
+After completing this video, you will be able to work with Python toolkits to implement various types of data visualization.
+work with Python toolkits to implement various types of data visualization
+[Video description begins] Topic title: Implementing Data Visualization with Python. Your host for this session is Garv Khurana. [Video description ends]
+In this video, we will learn about one of the modern graphical visualization libraries called Bokeh. Unlike Matplotlib and Seaborn, Bokeh renders its visualizations using HTML and JavaScript. Hence, Bokeh is very useful for developing interactive plots that can be integrated with web apps or other reports very easily. For the purpose of this video, we will be using Python Jupyter Notebooks to demonstrate the features of this library.
+
+However, this library is built on JavaScript so it can be used accordingly. So let's get started. Let's click under the header "Import Packages" to view what all packages we are going to import. For the purpose of this video, we are importing the components from three main packages, namely bokeh, pandas, and matplotlib as can be seen in the code lines 1, 15, and 21, of the first code cell under Import Packages header.
+
+Under the three commented headers, we've imported the methods of the corresponding packages in individual lines. Do note that the format used to import the methods from each package is the same and the format is the keyword from is followed by the name of the package with its object, which is followed by the keyword import, which is followed by the method that is to be imported. For an example, we can look at line number 2, where we've imported the output_notebook method using the syntax from bokeh.io import output_notebook.
+
+In your case, the import cell may look different depending on the imported methods. However, you could follow the same syntax to correctly import the packages. [Video description begins] Under # bokeh, the other packages are: from bokeh.io import output_file, show from bokeh.models import (BasicTicker, ColorBar, ColumnDataSource, LinearColorMapper, PrintfTickFormatter,) from bokeh.plotting import figure from bokeh.sampledata.unemployment1948 import data from bokeh.transform import transform from bokeh.palettes import Spectra14 from bokeh.plotting import figure, output_file, show from bokeh.sampledata.stocks import AAPL, GOOG, IBM, MSFT. Under # pandas, the packages are: import pandas as pd from pandas import read_csv from pandas import DataFrame from pandas import Grouper. under matplotlib, the package is: from matplotlib import pyplot. The last code line reads output_notebook(). [Video description ends]
+
+So let us proceed with importing the required packages for the code that we will be reviewing in this video. [Video description begins] The host minimizes Import Packages and expands Input Data to plot. The two lines of code read: series = read_csv('daily-min-temperatures.csv', header=0, index_col=0, parse_dates=True, squeeze=True). [Video description ends] In the first section of the video, we will compare the plots between traditional library Matplotlib and modern visualization library Bokeh. So let us first import and understand what the data is about.
+
+The data in output cell [3] represents daily minimum temperatures of a certain region from 1981 to 1990. We will first use pandas to process the data and plot these using matplotlib and then plot these using Bokeh. First, let us proceed with plotting a heatmap using matplotlib.
+
+In the heatmap plot using matplotlib, larger temperature values are drawn with warmer colors, with shades of green and yellow, and lower temperature values are drawn with cooler colors such as blue and dark blue. In the same plot, the X-axis denotes the number of days in a year, whereas on the Y-axis we have the temperatures. The plot represents cooler minimum temperatures in the middle days of the year.
+
+As we can infer by looking at the plot, it represents cooler minimum temperatures in the middle days of the year and warmer temperatures at the start and end of the year with fading complexity in between. [Video description begins] Heatmap using matplotlib contains 9 lines of code. #plot groups = series.groupby(Grouper(freq='A') years = DataFrame() for name, group in groups: years = years.T pyplot.matshow(years, interpolation=None, aspect='auto') pyplot.show(). [Video description ends] Now, let us look at how this heatmap plot can be improved using Bokeh library. [Video description begins] The host expands Heatmap with Bokeh. There are two steps: data preparation step and plot. [Video description ends] In output cell [6], we can see the resultant heatmap plotted using Bokeh library.
+
+In this heatmap on the X-axis, we have years, and on the Y-axis, we have months of the year, whereas the temperature values are being displayed by their color gradients. This scale mapping the color gradient and temperature values is given on the right side of the plot. Here, larger temperature values are drawn with warmer shades of red, whereas the cooler temperatures are drawn with warmer shades of green. As with the plot that was drawn using matplotlib, same inference can be drawn.
+
+That is, cooler minimum temperatures are during the middle days of the year, whereas warmer temperatures are at the start and end of the years. However, more information can be plotted more easily using the Bokeh plot. Moreover, it is more easy in Bokeh to scale up on features and interactiveness.
+
+We will see how we can scale up on both of these elements in subsequent plots. Bokeh allows us to use different shapes inside the plots. [Video description begins] The host expands Other Bokeh plots. [Video description ends] As we see in the plot in output cell [7], we've used hexagonal shape instead of the rectangular shape. In Bokeh, this is very easy to implement as we can just change the parameter value from a rectangle to a hexagon.
+
+The following tutorial will help you provide plot steps to follow to create a plot using Bokeh library. The first step is to prepare a plot, as we have done in the first cell under Stacked times series plot header. In the code line 2 of the same cell, [Video description begins] The host expands Stacked times series plot. There are two steps: 1. PREPARE PLOT and 2. PREPARE AND ADD DATA TO PLOT. [Video description ends] we have initiated an object p and made it into a Bokeh figure object from Bokeh by using the syntax p = figure within parentheses, given the figure parameters such as the plot_width, plot_height, and x_axis_type. [Video description begins] The plot_width is 600, the plot_height is 250, and the x_axis_type is "datetime". [Video description ends]
+
+Then in line 3, we've added the plot title using the syntax p.title.text is equal to the text of the plot title that we want to add. [Video description begins] The text reads: 'Click on legend entries to hide the corresponding lines'. [Video description ends] Then the second broad step to create a Bokeh plot is to prepare and add the data to plot object that we created in step one. For that, let us run and review the code in subsequent code cell.
+
+In line 2 of the next cell, we have initiated a three-variable for loop where the first variable, data, stores the list of prices of stocks and the second variable, name, stores the list of names of stocks such as Apple, IBM, Microsoft, and Google. Then the third variable, color, stores the color palette given by the Spectral14, which is a palette object from Bokeh. Then moving to the next code line, for each iteration of the for loop, we have created a new data frame using df = pd.DataFrame syntax.
+
+Then in the code line number 4, we've plotted the just created data frame into Bokeh figure object we created in the previous code cell. This is given by the syntax p.line along with parameters in parentheses, where the parameters include 'date' column, 'close' column, line_width, color, alpha, and legend_label. Then the Stacked times series plot as a result of the code I've just reviewed is displayed as output of cell [9].
+
+The graph displays the values from the 'date' column on X-axis and values of 'close' column on Y-axis with different color palettes for different named assets. At this step, there is no interactivity added to the plot. [Video description begins] The host is at code cell 10, which reads # PREPARE PLOT LAYOUT AND FEATURES. [Video description ends] This brings us to the next step, where the plot layout and features can be added. And in the subsequent cell, we have done just that. Let's first run the code in the next cell and then review the code lines 2, 3, and 5 in the same set. In line 2, we've given the syntax p.legend.location = "top_left" to update the location of the legend from top right to top left.
+
+Then in code line 3, we have p.legend.click_policy = "hide" to add some interactivity to the plot, where, if we click on the legend, the corresponding price line will hide if it's visible and vice versa. Then in code line number 5, show command with p in parentheses is used to display the plot as a result of running the code cell. As a result, if you click on the legends in this plot, you can hide these price lines. [Video description begins] The host clicks on GOOG and MSFT. [Video description ends] If you go through the online documentation of Bokeh, you will see simple ways to create powerful and interactive data visualizations. All the best.
+
+9. Video: Time Series Analysis in Data Science (it_clawsml_06_enus_09)
+
+In this video, you will learn how to describe what is meant by time series analysis and its role in data science.
+describe what's meant by time series analysis and define its role in data science
+[Video description begins] Topic title: Time Series Analysis in Data Science. Your host for this session is Garv Khurana. [Video description ends]
+In this video, we will understand what is time series analysis and why it is important in data science. Time series is a series of data points that are listed in time order, which is a sequence taken at points in time that are spaced equally. In other words, it is a sequence of discrete time data points. Now, time series analysis is the process of analyzing time series data to extract meaningful information and to understand the characteristics of the data.
+
+Time series analysis is really useful in creating models that predict future values of time series based on previously observed values, and this process is called time series forecasting. As data points in time series are collected at successive time periods, there is a potential for inherent correlation between the observed data points. And this distinguishes time series data from cross sectional data, wherein data points are analyzed at a single point in time.
+
+In the real world, the time series data is used and found in economic and financial domains, in social sciences, in medical data collection and tracking, and in monitoring geophysical data points such as temperatures and pollution levels. It is important to note that visualizing time series data provides the users an opportunity to detect if there are any explosive changes happening in a variable over a period of time, or to see if there are any long-term trends, or to assess any seasonality in the data.
+
+Not just that, time series visualization can help analyze any structural breaks within the dataset or identify any sudden change in the behavior of the dataset at a certain point of time. Now, let's visit one of the major goal of time series analysis that is forecasting of data. In time series forecasting, existing data points are analyzed to create a regression-based predictive model. Then future data points are predicted based on the model at various points in time.
+
+Time series forecasting is also useful to predict missing values in a continuous dataset. Other applications of time series analysis include pattern recognition, clustering, and classification using machine learning and for detecting anomalies in data.
+
+10. Video: Advanced Time Series Analysis Concepts (it_clawsml_06_enus_10)
+
+Upon completion of this video, you will be able to recognize what is meant by advanced time series analysis concepts, such as trends, seasonality, and autocorrelation.
+recognize what's meant by advanced time series analysis concepts, such as trends, seasonality, and autocorrelation
+[Video description begins] Topic title: Advanced Time Series Analysis Concepts. Your host for this session is Garv Khurana. [Video description ends]
+In this video, we will understand what are trends and seasonality in time series data, and we will understand the concept of autocorrelation in time series. Time series data often has an inherent trend wherein the values of a variable are proportionate to the time period in an increasing or decreasing pattern. Conversely, data can also be centered around the time-independent mean, thereby indicating that no trend in the data exists over a period of time.
+
+Such a time series data is called mean-reverting data, and the mean could be a zero or nonzero mean. Time series data can also have inherent seasonality, wherein the data exhibits regular and predictable pattern at time period intervals that are shorter than a year. Often seasonality exists in temperatures or sales as these parameters vary over different seasons in a year. Seasonality in the data can exist independently of any inherent trend within the data.
+
+Now, let us understand what is autocorrelation in time series data. In time series analysis, it is often seen that there is some degree of correlation that exists between observations of the same datasets at different points in time. This is called autocorrelation or serial dependence. And autocorrelation is important to detect for creating accurate predictive models. The times series data can be visualized using overlapping or separated charts.
+
+In overlapping charts, all the time series data is displayed in the same layout on top of each other, whereas in separated charts they are presented in a different layout but are aligned so that they can be compared to each other.
+
+11. Video: Implementing Time Series Analysis in Python (it_clawsml_06_enus_11)
+
+During this video, you will learn how to work with time series data in Python by implementing data analysis pipelines.
+work with time series data in Python, implementing data analysis pipelines
+[Video description begins] Topic title: Implementing Time Series Analysis in Python. Your host for this session is Garv Khurana. [Video description ends]
+In this video, we will learn how to use data science packages that are available in Python to review and analyze different time series. We will be taking one example dataset of a time series and analyze trends and seasonality on top of that. For this video, we will be using pandas, matplotlib, and statsmodels. We've learned about pandas and matplotlib in an earlier demo video in Exploratory Data Analysis course.
+
+However, for analyzing time series, we will be using another package called statsmodels. This package provides tools for estimation of many statistical models conducting statistical test and exploration analysis. So let's get started. First, let us import the discussed packages. [Video description begins] The host expands Import Packages. The code reads: from pandas import read_csv, to_datetime, from matplotlib import pyplot, form statsmodels.tsa.seasonal import seasonal_decompose. [Video description ends] Now that these packages are imported, let us import some time series data, and to get a feel of the data, let's plot it on a graph. In cell number [2], we've imported a time series using pandas read_csv module wherein we've read a .csv file that contains passengers' airline data from a period between 1949 to 1960.
+
+This data is taken at a monthly interval. From there on, we've used matplotlib to plot this time series on a line graph. This is displayed in the resulting cell of cell number [2]. Now in this plot at the center of the screen, the X-axis represents the monthly timeline, whereas the Y-axis represents the number of airline-passengers.
+
+On looking at the graph more closely, we see that the increasing values in the graph from start date until the end date, it seems to suggest a linear trend. Thus, this dataset seems relevant to be processed further for trend analysis. In the graph, we also see that some chart cycles repeat every year. This suggests that there could be some seasonality in the given series of data.
+
+So far our inference is only based just by looking at the graph. We should run some statistical analysis to analyze trend and seasonality. For this purpose, we will use seasonal decomposition using moving averages on this data. We will be able to achieve this by using a method from statsmodel package. So let's proceed and run this method. [Video description begins] The host minimizes Import and Plot Data and expands Analyzing Trend and Seasonality. [Video description ends] In lines 2, 3, and 4, we've processed the data to prepare to run seasonal_decompose method from statsmodel. First, let us review how the data is processed.
+
+So let's proceed and run the code under Analyzing Trend and Seasonality header. In cell number [3] and code line number 2, we have first reset the current index of our data series that holds the data on which the chart is plotted. To do that, we've used the series.reset_index syntax with (inplace=True). Then in code line 3, we have updated the index of the series by using the syntax series.index = to_datetime function configured on the 'Month' column in the series with desired configurations for format and error parameters.
+
+Then in line 4, we have suffixed the .drop command to series dataset to remove the 'Month' column on axis 1 and inplace=True. The step in line 4 is done to remove the redundant column 'Month' as the values from the same column are also stored in the index column as a result of code in line 3. [Video description begins] The method on line number 4 is series.drop. [Video description ends] Now, as a result of lines 2, 3 and 4, our data in the series object is processed to be used in seasonal_decompose method that could result in an analysis of trend and seasonality.
+
+Therefore, in code line 6 of input cell [3], we created a new object called result and made it equal to seasonal_decompose method from stats package. The first parameter given to the method is the series object that contains the plotted data. And model field is made equal to the text string 'multiplicative'. Then in line 7 and in line 8 we've used result.plot and pyplot.show to plot and print the charts respectively. It is beneficial to note that seasonal_decompose method uses moving averages for our time series analysis.
+
+Also, the rational for using multiplicative model is because our trend and seasonality components were amplifying in our earlier analysis. And in another case we could have used an additive model if the trend and seasonality components were shown to be flattened in our analysis.
+
+12. Video: Course Summary (it_clawsml_06_enus_12)
+
+In this video, we will summarize the key concepts covered in this course.
+summarize the key concepts covered in this course
+[Video description begins] Topic title: Course Summary. [Video description ends]
+In this course, we learned about the types of data and the distributions for each type of data. From thereon, we learned about traditional and modern data visualizations method. Then using a heatmap plot, we discussed and compared both traditional and modern data visualizations method. From thereon, we learned about different components of time series and time series analysis. Finally, using statsmodel package in Python, we performed a real-time analysis for trends and seasonality in a time series dataset.
