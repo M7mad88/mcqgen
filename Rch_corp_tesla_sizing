@@ -1,0 +1,137 @@
+-- DROP TABLE twm_result.MHR_RCH_Corp;
+
+CREATE MULTISET TABLE twm_result.MHR_RCH_Corp AS
+(
+    WITH base AS
+    (
+        SEL
+            bs.Subscription_Id
+          , bs.Rate_Plan_Group
+          , bs.Rate_Plan_Category
+          , CASE
+                WHEN bs.XNET_Base_Segmentation = 1 THEN 'Seg_1'
+                WHEN bs.XNET_Base_Segmentation = 2 THEN 'Seg_2'
+                WHEN bs.XNET_Base_Segmentation = 3 THEN 'Seg_3'
+            END AS Base_Segmentation
+          , bs.Total_Recharge_Tier
+          , CASE
+                WHEN (
+                        (bs.Rate_Plan_Category = 'PostPaid' AND bs.Corporate_Decile IN (1,2,3,4,5))
+                     OR (bs.Rate_Plan_Category = 'PrePaid'  AND bs.Corporate_Decile IN (1,2))
+                     )
+                    THEN 'High'
+                WHEN (
+                        (bs.Rate_Plan_Category = 'PostPaid' AND bs.Corporate_Decile IN (6,7,8,9,10,0))
+                     OR (bs.Rate_Plan_Category = 'PrePaid'  AND bs.Corporate_Decile IN (3,4,5,6,7,8,9,10,0))
+                     )
+                    THEN 'Low'
+            END AS Decile_Tier
+        FROM twm_result.MHR_Corporate_Groups_Base AS bs
+        WHERE 1=1
+          AND bs.XNET_Base_Segmentation IN (1,2,3)
+          AND (
+                (bs.Rate_Plan_Category='PostPaid' AND bs.Corporate_Decile IN (0,1,2,3,4,5,6,7,8,9,10))
+             OR (bs.Rate_Plan_Category='PrePaid'  AND bs.Corporate_Decile IN (0,1,2,3,4,5,6,7,8,9,10))
+              )
+        GROUP BY 1,2,3,4,5,6
+    )
+
+    , BO_RCH AS
+    (
+        /* ====== BO Report Recharge Amount logic (Sep+Oct+Nov 2025) ====== */
+
+        /* 1) Payments-based recharge from dnom_payment (same filters as report) */
+        SEL
+            dp.Subscription_Id
+          , EXTRACT(YEAR  FROM CAST(dp.Payment_Dttm AS DATE)) AS yr
+          , EXTRACT(MONTH FROM CAST(dp.Payment_Dttm AS DATE)) AS mn
+          , SUM(dp.Payment_Transaction_Amt) AS BO_Recharge_Amt
+        FROM dnom_payment dp
+        INNER JOIN Rate_plan p
+            ON p.Rate_Plan_Product_Id = dp.Rate_Plan_Product_Id
+        LEFT JOIN VDB.PREPAID_PAYMENT pp
+            ON pp.Payment_Id = dp.payment_id
+        WHERE 1=1
+          AND p.Rate_Plan_Group = 'Business'
+          AND CAST(dp.Payment_Dttm AS DATE) BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+          AND CAST(pp.Payment_Dttm AS DATE) BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+          AND dp.Refill_Type_Cd IN (1,2,11,12)
+        GROUP BY 1,2,3
+
+        UNION ALL
+
+        /* 2) Tesla recharge from network activity (as per report union) */
+        SEL
+            anasm.subscription_id
+          , EXTRACT(YEAR  FROM anasm.call_start_date) AS yr
+          , EXTRACT(MONTH FROM anasm.call_start_date) AS mn
+          , SUM(anasm.Call_Charge_Amount) AS BO_Recharge_Amt
+        FROM AGG_NW_ACTIVITY_SUBS_daily anasm
+        INNER JOIN Rate_plan p
+            ON p.Rate_Plan_Product_Id = anasm.Rate_Plan_Product_Id
+        INNER JOIN network_activity_type nat
+            ON nat.Network_Activity_Type_Cd = anasm.Network_Activity_Type_Cd
+        WHERE 1=1
+          AND p.Rate_Plan_Group = 'Business'
+          AND anasm.call_start_date BETWEEN DATE '2025-09-01' AND DATE '2025-11-30'
+          AND nat.Network_Activity_Type_Group = 'tesla'
+        GROUP BY 1,2,3
+    )
+
+    , BO_RCH_MONTHLY AS
+    (
+        SEL
+            Subscription_Id
+          , yr
+          , mn
+          , SUM(BO_Recharge_Amt) AS BO_Recharge_Amt
+        FROM BO_RCH
+        GROUP BY 1,2,3
+    )
+
+    SEL
+        b.Subscription_Id
+      , b.Total_Recharge_Tier
+      , b.Base_Segmentation
+      , b.Decile_Tier
+      , COALESCE(CECM.Rech_Plat_Redem_Flag,'N') AS Rech_Plat_Redem_Flag
+
+      /* ===== M3/M2/M1 now = BO_Recharge_Amt (not RevenueMart) ===== */
+      , ZEROIFNULL(SUM(CASE WHEN r.yr=2025 AND r.mn=9  THEN r.BO_Recharge_Amt END))  AS M3_Total_Rev
+      , ZEROIFNULL(SUM(CASE WHEN r.yr=2025 AND r.mn=10 THEN r.BO_Recharge_Amt END))  AS M2_Total_Rev
+      , ZEROIFNULL(SUM(CASE WHEN r.yr=2025 AND r.mn=11 THEN r.BO_Recharge_Amt END))  AS M1_Total_Rev
+
+      /* avoid GROUP BY error: aggregate this flag */
+      , MAX(CASE WHEN _AB.Subscription_Id IS NULL AND COALESCE(_MCG.UCG_Flag,0) IN (5,7)
+                 THEN 1 ELSE 0 END) AS should_be_selected
+
+    FROM base b
+    LEFT JOIN BO_RCH_MONTHLY r
+        ON r.Subscription_Id = b.Subscription_Id
+       AND r.yr = 2025
+       AND r.mn IN (9,10,11)
+
+    LEFT JOIN
+    (
+        SEL
+            Subscription_id
+          , Rech_Plat_Redem_Flag
+        FROM VDB.cvm_engagement_Corporate_monthly
+        WHERE Cal_Month = 11
+          AND Cal_Year  = 2025
+        GROUP BY 1,2
+    ) AS CECM
+        ON CECM.Subscription_id = b.Subscription_Id
+
+    LEFT JOIN VDB.AB_Testing_CG_TG AS _AB
+        ON _AB.Subscription_ID = b.Subscription_Id
+
+    LEFT JOIN VDB.Master_Control_Group AS _MCG
+        ON _MCG.Subscription_Id = b.Subscription_Id
+
+    GROUP BY 1,2,3,4,5
+)
+WITH DATA
+PRIMARY INDEX (Subscription_Id);
+
+SEL * FROM twm_result.MHR_RCH_Corp;
